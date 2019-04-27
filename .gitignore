@@ -1,0 +1,8 @@
+/test_data.h
+/fann_conf.h
+/fann_net.h
+/stm32l475-onDeviceTest/Drivers
+/stm32l475-onDeviceTest/MDK-ARM/RTE
+/stm32l475-onDeviceTest/MDK-ARM/DebugConfig
+/stm32l475-onDeviceTest/MDK-ARM/hello_world
+/training
