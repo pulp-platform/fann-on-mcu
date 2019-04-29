@@ -164,6 +164,7 @@ int main(void)
 		snprintf(aTxBuffer, TXBUFFERSIZE, "correct %d out of %d\r\n", corr, NUM_TESTS);
 		if(HAL_UART_Transmit(&huart1, (uint8_t *)aTxBuffer, TXBUFFERSIZE, 5000)!= HAL_OK) { Error_Handler(); }
 		
+		HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

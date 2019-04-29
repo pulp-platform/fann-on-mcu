@@ -65,3 +65,10 @@
 
 
 # End of https://www.gitignore.io/api/keil
+
+# others
+*.crf
+*.iex
+*.axf
+*.htm
+*.sct
