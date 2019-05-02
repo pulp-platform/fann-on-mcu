@@ -550,6 +550,16 @@
               <FileType>5</FileType>
               <FilePath>..\..\test_data.h</FilePath>
             </File>
+            <File>
+              <FileName>fann_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\fann_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>fann_utils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\fann_utils.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
