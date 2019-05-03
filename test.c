@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[])
 {
-    printf("starting tests....");
+    printf("starting tests....\n");
     fann_type *calc_out;
 
     int corr = 0;
@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 			  // note: the test data has been rescaled offline. For a real application don't forget to scale the input data by MULTIPLIER!
 			
         calc_out = fann_run(test_data_input + NUM_INPUT * i);
+
 
         int cla = 0;
         if (calc_out[0] > calc_out[1]) {
@@ -26,9 +27,13 @@ int main(int argc, char *argv[])
         if (cla == test_data_output[i]) {
             ++corr;
         }
+        
     }
-    
+#ifndef PULPFANN
     float accuracy = corr / (float)i * 100;
-    printf("%d  %f\r\n", corr, accuracy);
+    printf("correct %d, accuracy %f\r\n", corr, accuracy);
+#else
+    printf("correct: %d out of %d\n", corr, NUM_TESTS);
+#endif
     
 }

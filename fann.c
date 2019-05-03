@@ -5,7 +5,11 @@
 #include "fann.h"
 #include "fann_structs.h"
 #include "fann_net.h"
+
+#ifndef PULPFANN
 #include <arm_math.h>
+#endif
+
 #include "fann_utils.h"
 
 
@@ -28,9 +32,12 @@ fann_type *fann_run(fann_type * input)
     fann_type max_sum = 0;
 #endif
 
-#ifdef FIXEDFANN
+#if defined(FIXEDFANN) && !defined(PULPFANN)
     arm_fill_q31(MULTIPLIER, neuron_values, NUM_NEURONS); // setting the bias neuron values
     arm_copy_q31(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT); // copy input data
+#elif defined(PULPFANN)
+    plp_fill_fixed32(MULTIPLIER, neuron_values, NUM_NEURONS);
+    plp_copy_fixed32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
 #else
     arm_fill_f32(1.0f, neuron_values, NUM_NEURONS);
     arm_copy_f32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
