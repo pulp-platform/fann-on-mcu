@@ -6,8 +6,10 @@
 #include "fann_structs.h"
 #include "fann_net.h"
 
-#ifndef PULPFANN
+#ifdef ARMFANN
 #include <arm_math.h>
+#elif defined(PULPFANN)
+#include <pulp.h>
 #endif
 
 #include "fann_utils.h"
@@ -68,7 +70,13 @@ fann_type *fann_run(fann_type * input)
                 }
 
 #ifdef FIXEDFANN
+
+#ifdef ARMFANN
                 arm_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
+#else
+                plp_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
+#endif
+
 #else
                 arm_dot_prod_f32((fann_type *)weights, neurons, num_connections, &neuron_sum);
 #endif

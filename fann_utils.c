@@ -1,9 +1,8 @@
 #include "fann_conf.h"
 #include "fann_utils.h"
 
-#ifndef PULPFANN
-#include <arm_math.h>
-#endif
+#ifdef ARMFANN
+//#include <arm_math.h>
 
 void arm_dot_prod_fixed32_accum32(q31_t * pSrcA, q31_t * pSrcB, uint32_t blockSize, q31_t * result) {
 	
@@ -51,8 +50,11 @@ void arm_dot_prod_fixed32_accum32(q31_t * pSrcA, q31_t * pSrcB, uint32_t blockSi
   *result = sum;
 }
 
+#endif
 
-void plp_fill_fixed32(q31_t value, q31_t * pDst, uint32_t blockSize) {
+#ifdef PULPFANN
+
+void plp_fill_fixed32(int32_t value, int32_t * pDst, uint32_t blockSize) {
 
   uint32_t blkCnt;                               /* loop counter */
 
@@ -60,10 +62,10 @@ void plp_fill_fixed32(q31_t value, q31_t * pDst, uint32_t blockSize) {
 #ifndef ARM_MATH_CM0_FAMILY
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t in1 = value;
-  q31_t in2 = value;
-  q31_t in3 = value;
-  q31_t in4 = value;
+  int32_t in1 = value;
+  int32_t in2 = value;
+  int32_t in3 = value;
+  int32_t in4 = value;
 
   /*loop Unrolling */
   blkCnt = blockSize >> 2u;
@@ -109,7 +111,7 @@ void plp_fill_fixed32(q31_t value, q31_t * pDst, uint32_t blockSize) {
 
 
 
-void plp_copy_fixed32(q31_t * pSrc, q31_t * pDst, uint32_t blockSize) {
+void plp_copy_fixed32(int32_t * pSrc, int32_t * pDst, uint32_t blockSize) {
 
   uint32_t blkCnt;                               /* loop counter */
 
@@ -117,7 +119,7 @@ void plp_copy_fixed32(q31_t * pSrc, q31_t * pDst, uint32_t blockSize) {
 #ifndef ARM_MATH_CM0_FAMILY
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t in1, in2, in3, in4;
+  int32_t in1, in2, in3, in4;
 
   /*loop Unrolling */
   blkCnt = blockSize >> 2u;
@@ -165,3 +167,55 @@ void plp_copy_fixed32(q31_t * pSrc, q31_t * pDst, uint32_t blockSize) {
     blkCnt--;
   }
 }
+
+
+void plp_dot_prod_fixed32_accum32(int32_t * pSrcA, int32_t * pSrcB, uint32_t blockSize, int32_t * result) {
+	
+  int32_t sum = 0;
+  uint32_t blkCnt;
+
+#ifndef ARM_MATH_CM0_FAMILY
+
+	// 4x loop unrolling: 
+  int32_t inA1, inA2, inA3, inA4;
+  int32_t inB1, inB2, inB3, inB4;
+
+  blkCnt = blockSize >> 2u;
+  while(blkCnt > 0u)
+  {
+    inA1 = *pSrcA++; inA2 = *pSrcA++; inA3 = *pSrcA++; inA4 = *pSrcA++;
+    inB1 = *pSrcB++; inB2 = *pSrcB++; inB3 = *pSrcB++; inB4 = *pSrcB++;
+
+    sum += ((int32_t) inA1 * inB1) >> DECIMAL_POINT;
+    sum += ((int32_t) inA2 * inB2) >> DECIMAL_POINT;
+    sum += ((int32_t) inA3 * inB3) >> DECIMAL_POINT;
+    sum += ((int32_t) inA4 * inB4) >> DECIMAL_POINT;
+		
+//    sum += ((q31_t) inA1 * inB1);
+//    sum += ((q31_t) inA2 * inB2);
+//    sum += ((q31_t) inA3 * inB3);
+//    sum += ((q31_t) inA4 * inB4);
+//		sum = sum >> DECIMAL_POINT;
+
+    blkCnt--;
+  }
+
+  //set block counter to remaining number of iterations
+  blkCnt = blockSize % 0x4u;
+#else
+	// for the Cortex-M0, we should not do loop unrolling, and
+	// thus perform all iterations individually
+  blkCnt = blockSize;
+#endif 
+
+  while(blkCnt > 0u) {
+    sum += ((int32_t) (*pSrcA++) * (*pSrcB++)) >> DECIMAL_POINT;
+    blkCnt--;
+  }
+  *result = sum;
+}
+
+
+#endif
+
+

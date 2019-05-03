@@ -1,9 +1,51 @@
 #!/usr/bin/env python2
 
-#Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli
+#Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli, Xiaying Wang
 
-import sys
+import sys, argparse
 from math import log
+
+def get_args():
+
+    dict = {}
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', help='the name of .data file and .net file exported from FANN and to be converted, e.g. sample-data/myNetwork')
+    parser.add_argument('-m', '--mode', dest='mode', choices=['float', 'fixed'], help='Select floating point or fixed point computation, default is fixed. This argument will be ignored if the input filename contains "fixed" or "float", in which case the computation mode will be based on the input filename, e.g. diabetes_float or diabetes_fixed.')
+    parser.add_argument('-p', '--platform', dest='platform', default='arm', choices=['arm','pulp'], help='Select the mcu platform, curretly supported ones are arm and pulp platforms, default is arm')
+    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='gap8', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf and GAP8, default is gap8')
+    args = parser.parse_args()
+
+    if args.input == None:
+        parser.error("Missing input filename of the files to be converted. --help for more details.")
+    elif '.data' in args.input or '.net' in args.input:
+        parser.error("Insert only the filename without .data or .net extentions.")
+    else:
+        dict['fname'] = args.input
+
+    if args.mode == None:
+        if "float" in args.input or "FLOAT" in args.input:
+            args.mode = 'float'
+        elif "fixed" in args.input or "FIXED" in args.input:
+            args.mode = 'fixed'
+        else:
+            parser.error("-m argument required. Floating point or fixed point operations? --help for more details.")
+    else:
+        if ("float" in args.input or "FLOAT" in args.input) and args.mode != 'float':
+            parser.error("-m ambiguous computation mode. Floating point of fixed point? --help for more details.")
+        if ("fixed" in args.input or "FIXED" in args.input) and args.mode != 'fixed':
+            parser.error("-m ambiguous computation mode. Floating point of fixed point? --help for more details.")
+
+    dict['mode'] = args.mode
+
+    dict['platform'] = args.platform
+
+    if args.platform == 'pulp':
+        if args.mode == 'float':
+            parser.error("currently no float support with pulp")
+        dict['pversion'] = args.pversion
+
+    return dict
 
 
 def mapToStringOfDType(dtype, arr):#dtype = "float" or "int"
@@ -22,24 +64,37 @@ def mapToStringOfDType(dtype, arr):#dtype = "float" or "int"
     
     return outp
 
-if len(sys.argv) != 2:
-    print("Missing argument for filename that should be converted. For example xor_fixed or xor_float!")
-    exit(-1)
+#if len(sys.argv) != 2:
+#    print("Missing argument for filename that should be converted. For example xor_fixed or xor_float!")
+#    exit(-1)
 
-print(sys.argv)
-fname = sys.argv[1]
+#print(sys.argv)
+#fname = sys.argv[1]
+
+args_dict = get_args();
+print("\nInput arguments:\n{}\n".format(args_dict))
+fname = args_dict['fname']
 
 try:
     netF = open(fname + '.net', 'r')
     # find out whether it's a fixed or float version
     fann = {}
     firstL = netF.readline()
-    if "FIX" in firstL:
-        print("nettype: fixed")
-        fann["nettype"] = "int"
-    else:
+#    if "FIXED" in firstL:
+#        print("nettype: fixed")
+#        fann["nettype"] = "int"
+#        args_dict['mode']="fixed"
+#    elif "FLOAT" in firstL:
+#        print("nettype: float")
+#        fann["nettype"] = "float"
+#        args_dict['mode']="float"
+#    else:
+    if args_dict['mode'] == 'float':
         print("nettype: float")
         fann["nettype"] = "float"
+    else: # args_dict['mode'] == 'fixed':
+        print("nettype: fixed")
+        fann["nettype"] = "int"
 
 
     file = netF.readlines()
@@ -132,6 +187,16 @@ try:
     # generate file contents for fann_conf.h
     saveString = '#ifndef FANN_FANN_CONF_H_\n'
     saveString = saveString + '#define FANN_FANN_CONF_H_\n\n'
+
+    if args_dict['platform'] == "arm":
+        print("ARM platform\n")
+        saveString = saveString + '#define ARMFANN\n'
+    elif args_dict['platform'] == "pulp":
+        print("PULP platform\n")
+        saveString = saveString + '#define PULPFANN\n'
+        if args_dict['pversion'] == "gap8":
+            print("gap8 is used\n")
+            saveString = saveString + '#define GAP8FANN\n'
 
     if fann["nettype"] == "int":
         saveString = saveString + '#define FIXEDFANN\n\n'

@@ -6,7 +6,7 @@
 /stm32l475-onDeviceTest/MDK-ARM/DebugConfig
 /stm32l475-onDeviceTest/MDK-ARM/hello_world
 /training
-
+*/build/*
 
 # Created by https://www.gitignore.io/api/keil
 # Edit at https://www.gitignore.io/?templates=keil

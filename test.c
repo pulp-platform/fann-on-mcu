@@ -4,6 +4,11 @@
 #include "fann_conf.h"
 #include "test_data.h"
 
+#ifdef PULPFANN
+#include <pulp.h>
+#endif
+
+
 int main(int argc, char *argv[])
 {
     printf("starting tests....\n");
@@ -14,6 +19,7 @@ int main(int argc, char *argv[])
     for(i = 0; i < NUM_TESTS; ++i) {
 			  // note: the test data has been rescaled offline. For a real application don't forget to scale the input data by MULTIPLIER!
 			
+
         calc_out = fann_run(test_data_input + NUM_INPUT * i);
 
 
@@ -29,11 +35,13 @@ int main(int argc, char *argv[])
         }
         
     }
-#ifndef PULPFANN
+#ifndef FIXEDFANN
     float accuracy = corr / (float)i * 100;
     printf("correct %d, accuracy %f\r\n", corr, accuracy);
 #else
     printf("correct: %d out of %d\n", corr, NUM_TESTS);
 #endif
+
+    return 0;
     
 }
