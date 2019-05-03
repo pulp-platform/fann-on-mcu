@@ -1,4 +1,4 @@
-PULPFANN=0
+PULPFANN=1
 
 ifeq ($(PULPFANN),1)
 
