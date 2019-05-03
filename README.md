@@ -35,6 +35,7 @@ An example can be found in the `sample-data` folder.
 Then, you can use the `generate.py` script to generate the 
 files to run on the microcontroller, for example on arm using fixed point:
 > python generate.py -i sample-data/myNetwork -m fixed -p arm
+
 For more details on how to use generate.py:
 > python generate.py -h
 
@@ -78,6 +79,7 @@ An example can be found in the `sample-data` folder.
 Then, you can use the `generate.py` script to generate the 
 files to run on the microcontroller, for example on pulp using fixed point (currently only fixed point is supported on pulp):
 > python generate.py -i sample-data/myNetwork -m fixed -p pulp
+
 For more details on how to use generate.py:
 > python generate.py -h
 
@@ -95,6 +97,7 @@ Optimizations can be done according to the specific pulp platform (Mr.Wolf, GAP8
 The folder `MrWolf-onBoardTest` contains a demo project running test and benchmarking code on an PULP Mr. Wolf board. To run the demo you need to install and configure the pulp sdk (instructions [here](https://github.com/pulp-platform/pulp-sdk)). Remember to source the `sourceme.sh` everytime you open a new terminal to use pulp sdk.
 After installing pulp sdk, run generate.py, copy the *.h and *.c files in the `MrWolf-onBoardTest` folder and do
 > make clean all run
+
 You should then be able to see the number of correctly classified samples (9 of 10) and the number of cycles for each test sample printed in the terminal.
 
 ## Fixed-Point Remarks
