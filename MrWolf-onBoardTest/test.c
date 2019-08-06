@@ -14,6 +14,11 @@ int main(int argc, char *argv[])
     printf("starting tests....\n");
     fann_type *calc_out;
 
+#ifdef PULPFANN
+    int sum_cycles = 0;
+    int sum_instr = 0;
+#endif
+
     int corr = 0;
     int i = 0;
     for(i = 0; i < NUM_TESTS; ++i) {
@@ -36,6 +41,10 @@ int main(int argc, char *argv[])
 
   // Activate specified events
   rt_perf_conf(&perf, (1<<RT_PERF_CYCLES) | (1<<RT_PERF_INSTR));
+  //rt_perf_conf(&perf, (1<<RT_PERF_IMISS)); //75
+  //rt_perf_conf(&perf, (1<<RT_PERF_TCDM_CONT));
+  //rt_perf_conf(&perf, (1<<RT_PERF_INSTR));
+  //rt_perf_conf(&perf, (1<<RT_PERF_ACTIVE_CYCLES));
 
   // Reset HW counters now and start and stop counters so that we benchmark
   // only around the printf
@@ -49,6 +58,11 @@ int main(int argc, char *argv[])
 
   printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
   printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
+  //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_IMISS));
+  //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_TCDM_CONT));
+
+  sum_cycles += rt_perf_read(RT_PERF_CYCLES);
+  sum_instr += rt_perf_read(RT_PERF_INSTR);
 
 #else
 
@@ -69,6 +83,8 @@ int main(int argc, char *argv[])
         }
         
     }
+
+    printf("mean cycles over num test is %d, mean instr is %d\n", sum_cycles/NUM_TESTS, sum_instr/NUM_TESTS);
 #ifndef FIXEDFANN
     float accuracy = corr / (float)i * 100;
     printf("correct %d, accuracy %f\r\n", corr, accuracy);

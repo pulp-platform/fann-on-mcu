@@ -11,9 +11,11 @@ def get_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', help='the name of .data file and .net file exported from FANN and to be converted, e.g. sample-data/myNetwork')
-    parser.add_argument('-m', '--mode', dest='mode', choices=['float', 'fixed'], help='Select floating point or fixed point computation, default is fixed. This argument will be ignored if the input filename contains "fixed" or "float", in which case the computation mode will be based on the input filename, e.g. diabetes_float or diabetes_fixed.')
+    parser.add_argument('-d', '--datatype', dest='dtype', choices=['float', 'fixed'], help='Select floating point or fixed point computation, default is fixed. This argument will be ignored if the input filename contains "fixed" or "float", in which case the computation mode will be based on the input filename, e.g. diabetes_float or diabetes_fixed.')
     parser.add_argument('-p', '--platform', dest='platform', default='arm', choices=['arm','pulp'], help='Select the mcu platform, curretly supported ones are arm and pulp platforms, default is arm')
-    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='gap8', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf and GAP8, default is gap8')
+    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='wolfe', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf (wolfe) and GAP8, default is wolfe')
+    parser.add_argument('-dm', '--domain', dest='domain', choices=['fc', 'cluster'], default='fc', help='In case pulp platform is selected, which domain do you want to use? Fabric Controller (fc) or Cluster? Default is cluster')
+    parser.add_argument('-c', '--computation', dest='comp', choices=['single', 'parallel'], default='single', help='In case pulp platform and cluster domain are selected, single core computation or parallel computation? Default is single')
     args = parser.parse_args()
 
     if args.input == None:
@@ -23,27 +25,31 @@ def get_args():
     else:
         dict['fname'] = args.input
 
-    if args.mode == None:
+    if args.dtype == None:
         if "float" in args.input or "FLOAT" in args.input:
-            args.mode = 'float'
+            args.dtype = 'float'
         elif "fixed" in args.input or "FIXED" in args.input:
-            args.mode = 'fixed'
+            args.dtype = 'fixed'
         else:
             parser.error("-m argument required. Floating point or fixed point operations? --help for more details.")
     else:
-        if ("float" in args.input or "FLOAT" in args.input) and args.mode != 'float':
+        if ("float" in args.input or "FLOAT" in args.input) and args.dtype != 'float':
             parser.error("-m ambiguous computation mode. Floating point of fixed point? --help for more details.")
-        if ("fixed" in args.input or "FIXED" in args.input) and args.mode != 'fixed':
+        if ("fixed" in args.input or "FIXED" in args.input) and args.dtype != 'fixed':
             parser.error("-m ambiguous computation mode. Floating point of fixed point? --help for more details.")
 
-    dict['mode'] = args.mode
+    dict['dtype'] = args.dtype
 
     dict['platform'] = args.platform
 
     if args.platform == 'pulp':
-        if args.mode == 'float':
+        if args.dtype == 'float':
             parser.error("currently no float support with pulp")
         dict['pversion'] = args.pversion
+        dict['domain'] = args.domain
+        if args.domain == 'fc' and args.comp == 'parallel':
+            parser.error("Fabric Controller doesn't have multiple cores")
+        dict['comp'] = args.comp
 
     return dict
 
@@ -83,16 +89,16 @@ try:
 #    if "FIXED" in firstL:
 #        print("nettype: fixed")
 #        fann["nettype"] = "int"
-#        args_dict['mode']="fixed"
+#        args_dict['dtype']="fixed"
 #    elif "FLOAT" in firstL:
 #        print("nettype: float")
 #        fann["nettype"] = "float"
-#        args_dict['mode']="float"
+#        args_dict['dtype']="float"
 #    else:
-    if args_dict['mode'] == 'float':
+    if args_dict['dtype'] == 'float':
         print("nettype: float")
         fann["nettype"] = "float"
-    else: # args_dict['mode'] == 'fixed':
+    else: # args_dict['dtype'] == 'fixed':
         print("nettype: fixed")
         fann["nettype"] = "int"
 

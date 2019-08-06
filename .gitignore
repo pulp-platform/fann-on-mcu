@@ -1,3 +1,7 @@
+*.S
+*.s
+*tracefile
+
 /test_data.h
 /fann_conf.h
 /fann_net.h
