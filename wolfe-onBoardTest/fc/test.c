@@ -4,9 +4,7 @@
 #include "fann_conf.h"
 #include "test_data.h"
 
-#ifdef PULPFANN
-#include <pulp.h>
-#endif
+#include <rt/rt_api.h>
 
 
 int main(int argc, char *argv[])
@@ -14,17 +12,15 @@ int main(int argc, char *argv[])
     printf("starting tests....\n");
     fann_type *calc_out;
 
-#ifdef PULPFANN
     int sum_cycles = 0;
     int sum_instr = 0;
-#endif
+
 
     int corr = 0;
     int i = 0;
     for(i = 0; i < NUM_TESTS; ++i) {
 			  // note: the test data has been rescaled offline. For a real application don't forget to scale the input data by MULTIPLIER!
 			
-#ifdef PULPFANN
 
   // This tructure will hold the configuration and also the results in the
   // cumulative mode
@@ -56,31 +52,28 @@ int main(int argc, char *argv[])
   rt_perf_stop(&perf);
 
 
-  printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
-  printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
+//  printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
+//  printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_IMISS));
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_TCDM_CONT));
 
   sum_cycles += rt_perf_read(RT_PERF_CYCLES);
   sum_instr += rt_perf_read(RT_PERF_INSTR);
 
-#else
 
 
-        calc_out = fann_run(test_data_input + NUM_INPUT * i);
 
-#endif
 
-        int cla = 0;
-        if (calc_out[0] > calc_out[1]) {
-            cla = 0;
-        } else {
-            cla = 1;
-        }
+  int cla = 0;
+  if (calc_out[0] > calc_out[1]) {
+    cla = 0;
+  } else {
+    cla = 1;
+  }
 
-        if (cla == test_data_output[i]) {
-            ++corr;
-        }
+  if (cla == test_data_output[i]) {
+    ++corr;
+  }
         
     }
 

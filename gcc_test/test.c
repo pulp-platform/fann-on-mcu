@@ -4,9 +4,6 @@
 #include "fann_conf.h"
 #include "test_data.h"
 
-#ifdef PULPFANN
-#include <pulp.h>
-#endif
 
 
 int main(int argc, char *argv[])

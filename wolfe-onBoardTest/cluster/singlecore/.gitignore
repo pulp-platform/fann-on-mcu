@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!Makefile
+!test.c
+!cluster.c
+!cluster.h

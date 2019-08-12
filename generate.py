@@ -2,6 +2,7 @@
 
 #Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli, Xiaying Wang
 
+import os
 import sys, argparse
 from math import log
 
@@ -13,9 +14,9 @@ def get_args():
     parser.add_argument('-i', '--input', help='the name of .data file and .net file exported from FANN and to be converted, e.g. sample-data/myNetwork')
     parser.add_argument('-d', '--datatype', dest='dtype', choices=['float', 'fixed'], help='Select floating point or fixed point computation, default is fixed. This argument will be ignored if the input filename contains "fixed" or "float", in which case the computation mode will be based on the input filename, e.g. diabetes_float or diabetes_fixed.')
     parser.add_argument('-p', '--platform', dest='platform', default='arm', choices=['arm','pulp'], help='Select the mcu platform, curretly supported ones are arm and pulp platforms, default is arm')
-    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='wolfe', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf (wolfe) and GAP8, default is wolfe')
-    parser.add_argument('-dm', '--domain', dest='domain', choices=['fc', 'cluster'], default='fc', help='In case pulp platform is selected, which domain do you want to use? Fabric Controller (fc) or Cluster? Default is cluster')
-    parser.add_argument('-c', '--computation', dest='comp', choices=['single', 'parallel'], default='single', help='In case pulp platform and cluster domain are selected, single core computation or parallel computation? Default is single')
+#    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='wolfe', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf (wolfe) and GAP8, default is wolfe')
+    parser.add_argument('-c', '--computation', dest='comp', choices=['single', 'parallel'], default='parallel', help='In case pulp platform is selected, single core computation or parallel computation? Default is parallel')
+    parser.add_argument('-dm', '--domain', dest='domain', choices=['fc', 'cluster'], default='cluster', help='In case pulp platform and singlecore computation are selected, which domain do you want to use? Fabric Controller (fc) or Cluster? Default is cluster')
     args = parser.parse_args()
 
     if args.input == None:
@@ -45,11 +46,13 @@ def get_args():
     if args.platform == 'pulp':
         if args.dtype == 'float':
             parser.error("currently no float support with pulp")
-        dict['pversion'] = args.pversion
-        dict['domain'] = args.domain
-        if args.domain == 'fc' and args.comp == 'parallel':
+        if args.comp == 'parallel' and args.domain == 'fc':
             parser.error("Fabric Controller doesn't have multiple cores")
+        #dict['pversion'] = args.pversion
+        #if args.domain == 'fc' and args.comp == 'parallel':
+        #    parser.error("Fabric Controller doesn't have multiple cores")
         dict['comp'] = args.comp
+        dict['domain'] = args.domain
 
     return dict
 
@@ -156,10 +159,22 @@ try:
 
     fann["generated_layers"] = []
     layer_num = 0
+    # largest layer including input layer
+    largest_layer = 0
+    # to find the layer with the most number of weights
+    previous_layer_num = 0
+    # the largest number of weights in a layer
+    largest_layer_weights = 0
     fann['layer_sizes'] = fann['layer_sizes'].strip()
     for layer in fann['layer_sizes'].split(' '):
         fann["generated_layers"].append('{' + str(layer_num) + ', ' + str(layer_num + int(layer)) + '}')
         layer_num = layer_num + int(layer)
+        if int(layer) > largest_layer:
+            largest_layer = int(layer)
+        if previous_layer_num*(int(layer)-1) > largest_layer_weights:
+            largest_layer_weights = previous_layer_num*(int(layer)-1)
+        previous_layer_num = int(layer)
+
 
     if "decimal_point" not in fann:
         fann['decimal_point'] = "1"
@@ -194,15 +209,15 @@ try:
     saveString = '#ifndef FANN_FANN_CONF_H_\n'
     saveString = saveString + '#define FANN_FANN_CONF_H_\n\n'
 
-    if args_dict['platform'] == "arm":
-        print("ARM platform\n")
-        saveString = saveString + '#define ARMFANN\n'
-    elif args_dict['platform'] == "pulp":
-        print("PULP platform\n")
-        saveString = saveString + '#define PULPFANN\n'
-        if args_dict['pversion'] == "gap8":
-            print("gap8 is used\n")
-            saveString = saveString + '#define GAP8FANN\n'
+    # if args_dict['platform'] == "arm":
+    #     print("ARM platform\n")
+    #     saveString = saveString + '#define ARMFANN\n'
+    # elif args_dict['platform'] == "pulp":
+    #     print("PULP platform\n")
+    #     saveString = saveString + '#define PULPFANN\n'
+    #     #if args_dict['pversion'] == "gap8":
+    #     #    print("gap8 is used\n")
+    #     #    saveString = saveString + '#define GAP8FANN\n'
 
     if fann["nettype"] == "int":
         saveString = saveString + '#define FIXEDFANN\n\n'
@@ -220,8 +235,12 @@ try:
 
     saveString = saveString + '\n#endif // FANN_FANN_CONF_H_\n'
 
+    # TODO no_dma - precision --> estimate memory size
+    use_dma = False
+    print("\n#### use_dma {}\n".format(use_dma))
+
     try:
-        FW = open('fann_conf.h', "w")
+        FW = open("output/fann_conf.h", "w")
         FW.write(saveString)
         FW.close()
     except IOError:
@@ -237,26 +256,96 @@ try:
     saveString = saveString + '#define FANN_FANN_NET_H_\n\n'
 
     #insert includes
+    if args_dict['platform'] == "pulp":
+        saveString = saveString + '#include "rt/rt_api.h"\n'
     saveString = saveString + '#include "fann.h" \n'
     saveString = saveString + '#include "fann_structs.h" \n\n'
 
-    saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
-    saveString = saveString + 'const fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
-    saveString = saveString + 'const fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
-    saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+    # Declare the variables with const member attribute if platform is arm
+    if args_dict['platform'] == "arm":
+        saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+        saveString = saveString + 'const fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+        saveString = saveString + 'const fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+        saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n'
+        saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+
+    # If platform is pulp and the data are declared in L1 (without using dma,
+    # i.e. use_dma = False, the const attribute can't be used because of error:
+    # fann_net.h:10:30: error: fann_neurons causes a section type conflict with neuron_values)
+    else: # in case of pulp platform #if args_dict['platform'] == "pulp":
+        if args_dict['domain'] == "cluster" and not use_dma:
+            saveString = saveString + 'RT_CL_DATA enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+            saveString = saveString + 'RT_CL_DATA fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+            saveString = saveString + 'RT_CL_DATA fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+            saveString = saveString + 'RT_CL_DATA fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+            saveString = saveString + 'RT_CL_DATA fann_type neuron_values[NUM_NEURONS];\n\n'
+
+            # Copy fann_struct.h with RT_CL_DATA to output/ folder
+            os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+
+            # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
+            # output/ folder
+            if args_dict['comp'] == "parallel":
+                print("\n#### copying ./pulp/cluster/no_dma/parallel/* ./output/\n")
+                os.system("cp ./pulp/cluster/no_dma/parallel/* ./output/")
+            else:
+                print("\n#### copying ./pulp/cluster/no_dma/single/* ./output/\n")
+                os.system("cp ./pulp/cluster/no_dma/single/* ./output/")
+
+        elif args_dict['domain'] == "cluster" and use_dma:
+
+            saveString = saveString + 'RT_L2_DATA enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+            saveString = saveString + 'RT_L2_DATA fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+            saveString = saveString + 'RT_L2_DATA fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+            # fann_layers in CL_DATA
+            saveString = saveString + 'RT_CL_DATA fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+
+            # saveString largest_layer for buffer size for the dma trasfer
+            # (neuron_values)
+            saveString = saveString + '#define NUM_NEURONS_BIGGEST_LAYER ' + str(largest_layer) + '\n'
+            saveString = saveString + 'RT_CL_DATA fann_type neuron_values[2][NUM_NEURONS_BIGGEST_LAYER];\n\n'
+            saveString = saveString + '#define BIGGEST_NUM_WEIGHTS_LAYER ' + str(largest_layer_weights) + '\n'
+            saveString = saveString + 'RT_CL_DATA fann_type weights_loc_buff[2][BIGGEST_NUM_WEIGHTS_LAYER];\n\n'
+
+            # Copy fann_struct.h with RT_CL_DATA to output/ folder
+            os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+
+            # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
+            # output/ folder
+            if args_dict['comp'] == "parallel":
+                print("\n#### copying ./pulp/cluster/with_dma/parallel/* ./output/\n")
+                os.system("cp ./pulp/cluster/with_dma/parallel/* ./output/")
+            else:
+                print("\n#### copying ./pulp/cluster/with_dma/single/* ./output/\n")
+                os.system("cp ./pulp/cluster/with_dma/single/* ./output/")
+
+        else: # on fabric controller
+
+            saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+            saveString = saveString + 'fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+            saveString = saveString + 'fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+            saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+            saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+
+            # Also copy the right fann.c to the
+            # output/ folder
+            print("\n#### copying ./pulp/fc/* ./output/\n")
+            os.system("cp ./pulp/fc/* ./output/")
+
+            # TODO RT_L2_DATA fann_net.h for fc private memory (const) or shared memory (RT_L2_DATA)
 
     saveString = saveString + '\n#endif // FANN_FANN_NET_H_\n'
 
     try:
-        FW = open('fann_net.h', "w")
+        FW = open("output/fann_net.h", "w")
         FW.write(saveString)
         FW.close()
     except IOError:
         print("Could not open write fann_net.h")
         exit(1)
 
-    print("generated fann_net.h")
-    print("generated fann_conf.h")
+    print("generated fann_net.h in folder output/")
+    print("generated fann_conf.h in folder output/")
     print("NETWORK converted. Please copy the files and/or recompile")
 except IOError:
     print("Could not open " + fname + ".net")
@@ -292,20 +381,49 @@ try:
 
     saveString = '#ifndef FANN_FANN_TEST_DATA_H_\n'
     saveString = saveString + '#define FANN_FANN_TEST_DATA_H_\n\n'
-    saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
-    saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
-    saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+
+
+    # Declare the variables with const member attribute if platform is arm
+    if args_dict['platform'] == "arm":
+        saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+        saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+        saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+
+    # If platform is pulp and the data are declared in L1 (without using dma,
+    # i.e. use_dma = False, the const attribute can't be used because of error:
+    # test_data.h:4:22: error: NUM_TESTS causes a section type conflict with test_data_output
+    else: # in case of pulp platform #if args_dict['platform'] == "pulp":
+        saveString = saveString + '#include "rt/rt_api.h"\n'
+        if args_dict['domain'] == "cluster" and not use_dma:
+            saveString = saveString + "RT_CL_DATA int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            saveString = saveString + "RT_L2_DATA fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "RT_CL_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+
+        elif args_dict['domain'] == "cluster" and use_dma:
+            # no const with RT_L2_DATA attribute
+            saveString = saveString + "RT_CL_DATA int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            saveString = saveString + "RT_L2_DATA fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "RT_CL_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+        else:
+            # no const with RT_L2_DATA attribute
+            saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+
+            # TODO RT_L2_DATA test_data.h for fc private memory (const) or
+            # shared memory (RT_L2_DATA)
+    
     saveString = saveString + '\n#endif // FANN_FANN_TEST_DATA_H_\n'
 
     try:
-        FW = open("test_data.h", "w")
+        FW = open("output/test_data.h", "w")
         FW.write(saveString)
         FW.close()
     except IOError:
         print("Could not create test_data.h")
         exit(1)
 
-    print("generated test_data.h")
+    print("generated test_data.h in folder output/")
 except IOError:
     print("Could not open " + fname + ".data or ")
     print("Failed to generate test_data from file")
