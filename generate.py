@@ -235,9 +235,6 @@ try:
 
     saveString = saveString + '\n#endif // FANN_FANN_CONF_H_\n'
 
-    # TODO no_dma - precision --> estimate memory size
-    use_dma = False
-    print("\n#### use_dma {}\n".format(use_dma))
 
     try:
         FW = open("output/fann_conf.h", "w")
@@ -250,6 +247,51 @@ try:
     # generate neurons
     generatedNeurons = fann["generated_neurons"]
     generatedConnections = mapToStringOfDType(fann["nettype"], fann["generated_connections"])
+
+    # TODO no_dma - precision --> estimate memory size
+    # - test_data_input: len(ins)/len(outs)
+    # - fann_neurons: len(fann["generated_neurons"]) * 4 * sizeof(datatype) [int,
+    # int, fann_type, enum fann_activationfunc_enum]
+    # - fann_weights: len(generatedConnections) * sizeof(fann_type)
+    # - fann_layers: len(fann["generated_layers"]) * 2 * sizeof(int)
+    # - neuron_values: 2*largest_layer
+    # - weights_loc_buff: 2*largest_layer_weights
+
+    try:
+        import functools
+
+        dataF = open(fname + '.data', 'r')
+
+        # parse data parameters
+        firstLine = dataF.readline().strip(' \r\n').split(' ')
+        numSamples = int(firstLine[0])
+        numInputs = int(firstLine[1])
+        numOutputs = int(firstLine[2])
+
+        #read data
+        contents = dataF.readlines()
+        inValues  = [[float(v) for v in line.strip().split(' ')] for i, line in enumerate(contents) if i % 2 == 0]
+        outValues = [[float(v) for v in line.strip().split(' ')] for i, line in enumerate(contents) if i % 2 == 1]
+        outValues = [lineVals.index(max(lineVals)) for lineVals in outValues] # convert to classification output
+
+        #flatten input list of lists
+        inValues = functools.reduce(lambda x, y: x + y, inValues)
+
+        #map values to string
+        ins = mapToStringOfDType(fann["nettype"], inValues)
+        outs = mapToStringOfDType("int", outValues)
+    except IOError:
+        print("Could not open " + fname + ".data or ")
+        print("Failed to generate test_data from file")
+        exit(-1)
+
+    estimated_memory_size = int((len(ins)/len(outs)) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + (2*largest_layer) + (2*largest_layer_weights))
+    print("estimated_memory_size {}".format(estimated_memory_size))
+    if estimated_memory_size < 62000:
+        use_dma = False
+    else:
+        use_dma = True
+    print("\n#### use_dma {}\n".format(use_dma))
 
     # generate file contents for fann_net.h
     saveString = '#ifndef FANN_FANN_NET_H_\n'
@@ -280,8 +322,11 @@ try:
             saveString = saveString + 'RT_CL_DATA fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
             saveString = saveString + 'RT_CL_DATA fann_type neuron_values[NUM_NEURONS];\n\n'
 
-            # Copy fann_struct.h with RT_CL_DATA to output/ folder
-            os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+            ## Copy fann_struct.h with RT_CL_DATA to output/ folder
+            #os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+            ## Comment: it doesn't help anyways even thought fann_layers and
+            #fann_neurons are in RT_CL_DATA, typedef can't have attribute
+            #RT_CL_DATA. Accessing activation is anyways an external load access.
 
             # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
             # output/ folder
@@ -307,8 +352,10 @@ try:
             saveString = saveString + '#define BIGGEST_NUM_WEIGHTS_LAYER ' + str(largest_layer_weights) + '\n'
             saveString = saveString + 'RT_CL_DATA fann_type weights_loc_buff[2][BIGGEST_NUM_WEIGHTS_LAYER];\n\n'
 
-            # Copy fann_struct.h with RT_CL_DATA to output/ folder
-            os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+            ## Copy fann_struct.h with RT_CL_DATA to output/ folder
+            #os.system("cp ./pulp/cluster/fann_structs.h ./output/")
+            ## Comment: it doesn't help since fann_neurons and fann_layers are
+            #in L2
 
             # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
             # output/ folder
@@ -332,7 +379,10 @@ try:
             print("\n#### copying ./pulp/fc/* ./output/\n")
             os.system("cp ./pulp/fc/* ./output/")
 
-            # TODO RT_L2_DATA fann_net.h for fc private memory (const) or shared memory (RT_L2_DATA)
+            # DONE RT_L2_DATA fann_net.h for fc private memory (const) or
+            # shared memory (RT_L2_DATA)
+            # done because "cluster" and not use_dma and "cluster" and use_dma
+            # cover both the cases cluster singlecore and multicore
 
     saveString = saveString + '\n#endif // FANN_FANN_NET_H_\n'
 
@@ -397,21 +447,23 @@ try:
         if args_dict['domain'] == "cluster" and not use_dma:
             saveString = saveString + "RT_CL_DATA int NUM_TESTS = " + str(len(outs)) + ";\n\n"
             saveString = saveString + "RT_L2_DATA fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
-            saveString = saveString + "RT_CL_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+            saveString = saveString + "RT_L2_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
 
         elif args_dict['domain'] == "cluster" and use_dma:
             # no const with RT_L2_DATA attribute
             saveString = saveString + "RT_CL_DATA int NUM_TESTS = " + str(len(outs)) + ";\n\n"
             saveString = saveString + "RT_L2_DATA fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
-            saveString = saveString + "RT_CL_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+            saveString = saveString + "RT_L2_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
         else:
             # no const with RT_L2_DATA attribute
             saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
             saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
             saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
 
-            # TODO RT_L2_DATA test_data.h for fc private memory (const) or
+            # DONE RT_L2_DATA test_data.h for fc private memory (const) or
             # shared memory (RT_L2_DATA)
+            # done because "cluster" and not use_dma and "cluster" and use_dma
+            # cover both the cases cluster singlecore and multicore
     
     saveString = saveString + '\n#endif // FANN_FANN_TEST_DATA_H_\n'
 
