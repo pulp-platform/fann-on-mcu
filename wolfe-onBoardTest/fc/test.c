@@ -64,25 +64,36 @@ int main(int argc, char *argv[])
 
 
 
-  int cla = 0;
-  if (calc_out[0] > calc_out[1]) {
-    cla = 0;
-  } else {
-    cla = 1;
-  }
+        int cla = 0;
+	if ((calc_out[0] > calc_out[1]) && (calc_out[0] > calc_out[2])) {
+	    cla = 0;
+	} else
+	if ((calc_out[1] > calc_out[0]) && (calc_out[1] > calc_out[2])) {
+	    cla = 1;
+	} else {
+	    cla = 2;
+	}
 
-  if (cla == test_data_output[i]) {
-    ++corr;
-  }
+        if (cla == test_data_output[i]) {
+            ++corr;
+        }
         
     }
 
-    printf("mean cycles over num test is %d, mean instr is %d\n", sum_cycles/NUM_TESTS, sum_instr/NUM_TESTS);
+    //printf("mean cycles over num test is %d, mean instr is %d\n", sum_cycles/NUM_TESTS, sum_instr/NUM_TESTS);
+    //printf("#### run on fc\n");
+    printf("#### NUM_INPUT_fc %d\n", NUM_INPUT);
+    printf("#### NUM_OUTPUT_fc %d\n", NUM_OUTPUT);
+    printf("#### mean_cycles_fc %d\n", sum_cycles/NUM_TESTS);
+    printf("#### mean_instr_fc %d\n", sum_instr/NUM_TESTS);
+
+    printf("ending tests....\n");
+
 #ifndef FIXEDFANN
     float accuracy = corr / (float)i * 100;
-    printf("correct %d, accuracy %f\r\n", corr, accuracy);
+    //printf("correct %d, accuracy %f\r\n", corr, accuracy);
 #else
-    printf("correct: %d out of %d\n", corr, NUM_TESTS);
+    //printf("correct: %d out of %d\n", corr, NUM_TESTS);
 #endif
 
     return 0;

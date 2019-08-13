@@ -10,7 +10,7 @@
 //#include <pulp.h>
 #include "plp_math.h"
 
-#define ACTIVATIONS
+//#define ACTIVATIONS
 
 
 fann_type *fann_run(fann_type * input)
@@ -32,8 +32,8 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-  plp_fill_i32s_xpulpv2(MULTIPLIER, neuron_values, NUM_NEURONS);
-
+  //plp_fill_i32s_xpulpv2(MULTIPLIER, neuron_values, NUM_NEURONS);
+  // Comment: not necessary, it's appended later, see below: append bias
 
   /*
     rt_perf_t perf;
@@ -123,6 +123,16 @@ fann_type *fann_run(fann_type * input)
 
 #endif // ACTIVATIONS
 
+    if(CONNECTION_RATE >= 1) { // CONNECTION_RATE
+        if(network_type == FANN_NETTYPE_SHORTCUT) {
+          neurons = neuron_values;
+        } else {
+          neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
+        } // FANN_NETTYPE_SHORTCUT
+
+    } else{
+        // not supported yet...
+    }
 
     for(neuron_it = first_neuron; neuron_it < last_neuron; ++neuron_it) { // last_neuron -1 because the last neuron is anyways the bias which is counted already in neuron_values with MULTIPLIER (see above)
           
@@ -137,12 +147,10 @@ fann_type *fann_run(fann_type * input)
       neuron_sum = 0;
 
       if(CONNECTION_RATE >= 1) {
-        if(network_type == FANN_NETTYPE_SHORTCUT) {
-          neurons = neuron_values;
-        } else {
-          neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
-          //printf("neurons %d, layer_it %d, fann_layers[layer_it - 1].first_neuron %d, neurons[0] %d\n", neurons, layer_it, fann_layers[layer_it - 1].first_neuron, neurons[0]);
-        }
+
+        // Append bias (MULTIPLIER)
+        neurons[num_connections-1] = MULTIPLIER;
+
         /*
           for(int i=0; i<num_connections; i++){
 

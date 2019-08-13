@@ -1,19 +1,19 @@
 //Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli
 
 #include <stdio.h>
-#include "fann_conf.h"
 #include "fann.h"
 #include "fann_structs.h"
 #include "fann_net.h"
-
+#include "fann_conf.h"
 #include "rt/rt_api.h"
 //#include <pulp.h>
 #include "plp_math.h"
 
 #include "fann_utils.h"
+
 #define nPE 8
 
-#define ACTIVATIONS
+//#define ACTIVATIONS
 
 
 //static int cycle_count = 0, instr_count =0;
@@ -44,7 +44,8 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-  plp_fill_i32s_xpulpv2(MULTIPLIER, neuron_values, NUM_NEURONS);
+  //plp_fill_i32s_xpulpv2(MULTIPLIER, neuron_values, NUM_NEURONS);
+  // Comment: not necessary, it's appended later, see below: append bias
 
   /*
     rt_perf_t perf;
@@ -147,6 +148,19 @@ fann_type *fann_run(fann_type * input)
     num_connections = fann_neurons[first_neuron].last_connection - fann_neurons[first_neuron].first_connection;
     // Comment: number of cycles are more if we compute it here...if we compute it in the loop of neuron_it then the cycles are fewer...
 
+    if(CONNECTION_RATE >= 1) { // CONNECTION_RATE
+        if(network_type == FANN_NETTYPE_SHORTCUT) {
+          neurons = neuron_values;
+        } else {
+          neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
+        } // FANN_NETTYPE_SHORTCUT
+
+        // Append bias (MULTIPLIER)
+        neurons[num_connections-1] = MULTIPLIER;
+    } else{
+        // not supported yet...
+    }
+
     // ATTENTION: +=nPE --> clean up for the remanding neurons -- done
     for(neuron_it = first_neuron; neuron_it < last_neuron-1; neuron_it+=nPE) { // EACH NEURON
       //printf("neuron_it %d, last_neuron-1 %d\n", neuron_it, last_neuron -1);
@@ -161,11 +175,6 @@ fann_type *fann_run(fann_type * input)
       neuron_sum = 0;
 
       if(CONNECTION_RATE >= 1) { // CONNECTION_RATE
-        if(network_type == FANN_NETTYPE_SHORTCUT) {
-          neurons = neuron_values;
-        } else {
-          neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
-        } // FANN_NETTYPE_SHORTCUT
 
 #ifdef FIXEDFANN
 

@@ -17,6 +17,8 @@ def get_args():
 #    parser.add_argument('-pv', '--platform_version', dest='pversion', choices=['wolfe', 'gap8'], default='wolfe', help='In case pulp platform is selected, which version of pulp platform? Currently tested ones are Mr. Wolf (wolfe) and GAP8, default is wolfe')
     parser.add_argument('-c', '--computation', dest='comp', choices=['single', 'parallel'], default='parallel', help='In case pulp platform is selected, single core computation or parallel computation? Default is parallel')
     parser.add_argument('-dm', '--domain', dest='domain', choices=['fc', 'cluster'], default='cluster', help='In case pulp platform and singlecore computation are selected, which domain do you want to use? Fabric Controller (fc) or Cluster? Default is cluster')
+    parser.add_argument('--activation', dest='activ', default=True, action='store_true', help='Only for performance measurement purpose. It sets the ACTIVATIONS.')
+    parser.add_argument('--no-activation', dest='activ', action='store_false', help='Only for performance measurement purpose. It ignores the ACTIVATIONS, i.e. no activation functions will be applied.')
     args = parser.parse_args()
 
     if args.input == None:
@@ -53,6 +55,8 @@ def get_args():
         #    parser.error("Fabric Controller doesn't have multiple cores")
         dict['comp'] = args.comp
         dict['domain'] = args.domain
+
+    dict['activ'] = args.activ
 
     return dict
 
@@ -233,6 +237,14 @@ try:
     saveString = saveString + '#define NUM_LAYERS ' + str(len(fann["generated_layers"])) + '\n'
     saveString = saveString + '#define CONNECTION_RATE ' + fann["connection_rate"] + '\n\n'
 
+    #if args_dict["comp"] == "parallel":
+    #    saveString = saveString + '#define nPE 8\n\n'
+    # Conflict with plp_math uint32_t nPE; plp_math.h:111,126,147,168
+
+    if args_dict["activ"] == True:
+        saveString = saveString + '#define ACTIVATIONS\n\n'
+    print("\n#### use_activ {}\n".format(args_dict["activ"]));
+
     saveString = saveString + '\n#endif // FANN_FANN_CONF_H_\n'
 
 
@@ -248,7 +260,7 @@ try:
     generatedNeurons = fann["generated_neurons"]
     generatedConnections = mapToStringOfDType(fann["nettype"], fann["generated_connections"])
 
-    # TODO no_dma - precision --> estimate memory size
+    # DONE use_dma - precision --> estimate memory size
     # - test_data_input: len(ins)/len(outs)
     # - fann_neurons: len(fann["generated_neurons"]) * 4 * sizeof(datatype) [int,
     # int, fann_type, enum fann_activationfunc_enum]
@@ -291,7 +303,8 @@ try:
         use_dma = False
     else:
         use_dma = True
-    print("\n#### use_dma {}\n".format(use_dma))
+    #use_dma = True
+    print("\n#### use_dma {}".format(use_dma))
 
     # generate file contents for fann_net.h
     saveString = '#ifndef FANN_FANN_NET_H_\n'
@@ -331,10 +344,10 @@ try:
             # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
             # output/ folder
             if args_dict['comp'] == "parallel":
-                print("\n#### copying ./pulp/cluster/no_dma/parallel/* ./output/\n")
+                print("\ncopying ./pulp/cluster/no_dma/parallel/* ./output/\n")
                 os.system("cp ./pulp/cluster/no_dma/parallel/* ./output/")
             else:
-                print("\n#### copying ./pulp/cluster/no_dma/single/* ./output/\n")
+                print("\ncopying ./pulp/cluster/no_dma/single/* ./output/\n")
                 os.system("cp ./pulp/cluster/no_dma/single/* ./output/")
 
         elif args_dict['domain'] == "cluster" and use_dma:
@@ -360,10 +373,10 @@ try:
             # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
             # output/ folder
             if args_dict['comp'] == "parallel":
-                print("\n#### copying ./pulp/cluster/with_dma/parallel/* ./output/\n")
+                print("\ncopying ./pulp/cluster/with_dma/parallel/* ./output/\n")
                 os.system("cp ./pulp/cluster/with_dma/parallel/* ./output/")
             else:
-                print("\n#### copying ./pulp/cluster/with_dma/single/* ./output/\n")
+                print("\ncopying ./pulp/cluster/with_dma/single/* ./output/\n")
                 os.system("cp ./pulp/cluster/with_dma/single/* ./output/")
 
         else: # on fabric controller
@@ -376,7 +389,7 @@ try:
 
             # Also copy the right fann.c to the
             # output/ folder
-            print("\n#### copying ./pulp/fc/* ./output/\n")
+            print("\ncopying ./pulp/fc/* ./output/\n")
             os.system("cp ./pulp/fc/* ./output/")
 
             # DONE RT_L2_DATA fann_net.h for fc private memory (const) or

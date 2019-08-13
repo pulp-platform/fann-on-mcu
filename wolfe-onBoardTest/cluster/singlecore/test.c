@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   // It must then be unmounted when it is not needed anymore so that it is turned off
   rt_cluster_mount(0, 0, 0, NULL);
 
-
+    printf("ending tests....\n");
 
     return 0;
     
