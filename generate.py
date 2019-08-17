@@ -493,3 +493,8 @@ except IOError:
     print("Could not open " + fname + ".data or ")
     print("Failed to generate test_data from file")
     exit(-1)
+
+
+# Copy other header files to output/ folder
+#os.system("cp ./fann.h ./output/")
+#os.system("cp ./fann_structs.h ./output/")

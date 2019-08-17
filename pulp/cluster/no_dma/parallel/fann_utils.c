@@ -49,6 +49,8 @@ void compute_per_layer_parallel(int32_t * pSrcA, int32_t * pSrcB, uint32_t block
   S.resBuffer = resBuffer;
 
   rt_team_fork(nPE, dot_prod_entry, (void *) &S);
+
+  //rt_team_barrier();
 }
 
 /*

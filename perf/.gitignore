@@ -1,0 +1,11 @@
+*.txt
+*.csv
+
+generated_data/*
+
+perftest_float.net
+perftest_fixed.net
+perftest_fixed.data
+perftest.test
+perftest.train
+

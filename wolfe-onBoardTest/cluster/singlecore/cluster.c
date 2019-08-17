@@ -12,7 +12,7 @@ static int buff_index = 0;
 
 void cluster_entry(void *arg){
 
-  printf("(%d, %d) Hello! Cluster entered\n", rt_cluster_id(), rt_core_id());
+  //printf("(%d, %d) Hello! Cluster entered\n", rt_cluster_id(), rt_core_id());
 
 
     fann_type *calc_out;
@@ -68,8 +68,10 @@ void cluster_entry(void *arg){
 //  printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
 //  printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
 
-  sum_cycles += rt_perf_read(RT_PERF_CYCLES);
-  sum_instr += rt_perf_read(RT_PERF_INSTR);
+  if (i >= 1) {
+    sum_cycles += rt_perf_read(RT_PERF_CYCLES);
+    sum_instr += rt_perf_read(RT_PERF_INSTR);
+  }
 
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_IMISS));
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_TCDM_CONT));
@@ -107,8 +109,8 @@ int cla = 0;
     //printf("#### run on singleriscy\n");
     printf("#### NUM_INPUT_singleriscy %d\n", NUM_INPUT);
     printf("#### NUM_OUTPUT_singleriscy %d\n", NUM_OUTPUT);
-    printf("#### mean_cycles_singleriscy %d\n", sum_cycles/NUM_TESTS);
-    printf("#### mean_instr_singleriscy %d\n", sum_instr/NUM_TESTS);
+    printf("#### mean_cycles_singleriscy %d\n", sum_cycles/(NUM_TESTS-1));
+    printf("#### mean_instr_singleriscy %d\n", sum_instr/(NUM_TESTS-1));
 
     //printf("correct: %d out of %d\n", corr, NUM_TESTS);
 

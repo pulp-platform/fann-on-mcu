@@ -9,11 +9,11 @@
 #define PERF_COUNTER
 
 RT_CL_DATA fann_type local_data_buffer[2][NUM_INPUT];
-static int buff_index = 0;
+int buff_index = 0;
 
 void cluster_entry(void *arg){
 
-  printf("(%d, %d) Hello! Cluster entered\n", rt_cluster_id(), rt_core_id());
+  //printf("(%d, %d) Hello! Cluster entered\n", rt_cluster_id(), rt_core_id());
 
 
     fann_type *calc_out;
@@ -27,6 +27,7 @@ void cluster_entry(void *arg){
 
     // Prologue for the loop, we need to fetch one buffer
     rt_dma_memcpy((int)test_data_input, (int)local_data_buffer[buff_index], NUM_INPUT*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in);
+//printf("local_data_buffer[2][NUM_INPUT] %x, NUM_INPUT*datasize %d, id_in %d\n", &local_data_buffer[buff_index], NUM_INPUT*datasize, id_in);
     buff_index ^= 1;
 
     int corr = 0;
@@ -69,8 +70,10 @@ void cluster_entry(void *arg){
 //  printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
 //  printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
 
-  sum_cycles += rt_perf_read(RT_PERF_CYCLES);
-  sum_instr += rt_perf_read(RT_PERF_INSTR);
+  if (i >= 1) {
+    sum_cycles += rt_perf_read(RT_PERF_CYCLES);
+    sum_instr += rt_perf_read(RT_PERF_INSTR);
+  }
 
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_IMISS));
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_TCDM_CONT));
@@ -98,8 +101,8 @@ int cla = 0;
     //printf("#### run on multiriscy\n");
     printf("#### NUM_INPUT_multiriscy %d\n", NUM_INPUT);
     printf("#### NUM_OUTPUT_multiriscy %d\n", NUM_OUTPUT);
-    printf("#### mean_cycles_multiriscy %d\n", sum_cycles/NUM_TESTS);
-    printf("#### mean_instr_multiriscy %d\n", sum_instr/NUM_TESTS);
+    printf("#### mean_cycles_multiriscy %d\n", sum_cycles/(NUM_TESTS-1));
+    printf("#### mean_instr_multiriscy %d\n", sum_instr/(NUM_TESTS-1));
 
     //printf("correct: %d out of %d\n", corr, NUM_TESTS);
 
