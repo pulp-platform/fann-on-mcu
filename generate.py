@@ -163,20 +163,31 @@ try:
 
     fann["generated_layers"] = []
     layer_num = 0
-    # largest layer including input layer
+    # largest layer including input layer (largest number of neurons)
     largest_layer = 0
     # to find the layer with the most number of weights
     previous_layer_num = 0
     # the largest number of weights in a layer
     largest_layer_weights = 0
+    # For calculating layer-wise dma transfer or neuron-wise dma transfer, in
+    # case neuron-wise dma --> weights buffer size
+    #N_in_layer = 0
+    #N_out_layer = 0
+    ## Comment: the buffer size has to be anyways at least as large as
+    # largest_layer, i.e. largest number of neurons, in case neuron-wise
+
     fann['layer_sizes'] = fann['layer_sizes'].strip()
     for layer in fann['layer_sizes'].split(' '):
         fann["generated_layers"].append('{' + str(layer_num) + ', ' + str(layer_num + int(layer)) + '}')
         layer_num = layer_num + int(layer)
+
+        # Calculate buffers size for dma transfer
         if int(layer) > largest_layer:
             largest_layer = int(layer)
         if previous_layer_num*(int(layer)-1) > largest_layer_weights:
             largest_layer_weights = previous_layer_num*(int(layer)-1)
+            #N_in_layer = previous_layer_num - 1
+            #N_out_layer = int(layer) - 1
         previous_layer_num = int(layer)
 
 
@@ -261,13 +272,20 @@ try:
     generatedConnections = mapToStringOfDType(fann["nettype"], fann["generated_connections"])
 
     # DONE use_dma - precision --> estimate memory size
-    # - test_data_input: len(ins)/len(outs)
-    # - fann_neurons: len(fann["generated_neurons"]) * 4 * sizeof(datatype) [int,
-    # int, fann_type, enum fann_activationfunc_enum]
+    # - test_data_input: len(ins)/len(outs) * sizeof(datatype) * 2, test data
+    # buffer, 1 sample to be transfered to L1 before the classification starts
+    # - fann_neurons: len(fann["generated_neurons"]) *  sizeof(datatype) * 4
+    # [i.e. int, int, fann_type, enum fann_activationfunc_enum]
     # - fann_weights: len(generatedConnections) * sizeof(fann_type)
     # - fann_layers: len(fann["generated_layers"]) * 2 * sizeof(int)
-    # - neuron_values: 2*largest_layer
-    # - weights_loc_buff: 2*largest_layer_weights
+    # - neuron_values: len(fann["generated_neurons"]) * sizeof(datatype)
+
+    # WRONG: the following two addends are already considering layer-wise dma
+    # transfer case
+    # - neuron_values: 2*largest_layer buffer size * sizeof(datatype)
+    # - weights_loc_buff: 2*largest_layer_weights buffer size *
+    # sizeof(datatype)
+    # (more details see below)
 
     try:
         import functools
@@ -297,14 +315,55 @@ try:
         print("Failed to generate test_data from file")
         exit(-1)
 
-    estimated_memory_size = int((len(ins)/len(outs)) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + (2*largest_layer) + (2*largest_layer_weights))
-    print("estimated_memory_size {}".format(estimated_memory_size))
-    if estimated_memory_size < 62000:
+    # WRONG: the last to addends are considering already the layer-wise dma
+    # transfer case
+    # instead, it should calculate if the whole network without dma transfer
+    # fits or not into the L1, if not, then use dma. Next calculates if the
+    # largest layer fits into L1 to decide if layer-wise if enough or we need
+    # to do neuron-wise dma transfer
+    # estimated_memory_size = 2*4*int((len(ins)/len(outs))) +
+    # (len(fann["generated_neurons"])*(4+4+4+4)) +
+    # (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) +
+    # (2*largest_layer*4) + (2*largest_layer_weights*4)
+
+    estimated_memory_size = 2*4*int((len(ins)/len(outs))) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + len(fann["generated_neurons"]) * 4
+    print("Estimated memory size whole network {}".format(estimated_memory_size))
+    if estimated_memory_size < 59170: # In Mr. Wolf, L1 memory is 64KB - stack sizes
         use_dma = False
     else:
         use_dma = True
+
+    if use_dma:
+
+        # In Mr. Wolf, L1 memory is 64KB.
+        # Estimate if the largest layer can fit into L1:
+        # 4 = int32_t in bytes
+        # 2 * N_in = local_data_buffer
+        # 2 * max(N_in, N_out) = neuron buffer
+        # 2 * N_in * N_out = weights buffer
+        L1_size_estm = 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights)
+        if L1_size_estm  > 59170:
+            print("Estimated memory size largest layer {}".format(L1_size_estm))
+            dma_neuron_wise = True
+            if args_dict['comp'] == "parallel":
+                largest_layer_weights = largest_layer * 8
+                if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
+                    print("Parallel: Net size too large")
+                    exit(-1)
+            else:
+                largest_layer_weights = largest_layer
+                if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
+                    print("Single core riscy: Net size too large")
+                    exit(-1)
+        else:
+            dma_neuron_wise = False
+    else:
+        dma_neuron_wise = False
+
     #use_dma = True
-    print("\n#### use_dma {}".format(use_dma))
+    #dma_neuron_wise = True
+    print("\n#### use_dma {}\n#### neuron_wise {}".format(use_dma, dma_neuron_wise))
+    print("\n#### num_hidden_layers {}\n".format(len(fann["generated_layers"])-1-1)) # only hidden layers, FANN counts the output layer as a layer (actually also the input layer as layer)
 
     # generate file contents for fann_net.h
     saveString = '#ifndef FANN_FANN_NET_H_\n'
@@ -373,11 +432,19 @@ try:
             # Also copy the right fann.c, fann_utils.c, and fann_utils.h to the
             # output/ folder
             if args_dict['comp'] == "parallel":
-                print("\ncopying ./pulp/cluster/with_dma/parallel/* ./output/\n")
-                os.system("cp ./pulp/cluster/with_dma/parallel/* ./output/")
+                if dma_neuron_wise:
+                    print("\ncopying ./pulp/cluster/with_dma/neuron-wise/parallel/* ./output/\n")
+                    os.system("cp ./pulp/cluster/with_dma/neuron-wise/parallel/* ./output/")
+                else:
+                    print("\ncopying ./pulp/cluster/with_dma/layer-wise/parallel/* ./output/\n")
+                    os.system("cp ./pulp/cluster/with_dma/layer-wise/parallel/* ./output/")
             else:
-                print("\ncopying ./pulp/cluster/with_dma/single/* ./output/\n")
-                os.system("cp ./pulp/cluster/with_dma/single/* ./output/")
+                if dma_neuron_wise:
+                    print("\ncopying ./pulp/cluster/with_dma/neuron-wise/single/* ./output/\n")
+                    os.system("cp ./pulp/cluster/with_dma/neuron-wise/single/* ./output/")
+                else:
+                    print("\ncopying ./pulp/cluster/with_dma/layer-wise/single/* ./output/\n")
+                    os.system("cp ./pulp/cluster/with_dma/layer-wise/single/* ./output/")
 
         else: # on fabric controller
 

@@ -22,7 +22,7 @@ def gen_Makefile(num_input, num_output):
     print("generating Makefile...")
 
     f = open('Makefile', 'w')
-    print("file_open")
+
     f.write("GCC=gcc\nCFLAGS=-I ~/fann/src/include\nLDFLAGS=-L ~/fann/src/\n\nTARGETS = perftest_train perftest_test perftest_test_fixed\nDEBUG_TARGETS = perftest_debug\n\nall: $(TARGETS)\n\n%: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 $< -o $@ -lfann -lm\n\n%_fixed: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 -DFIXEDFANN $< -o $@ -lfixedfann -lm\n\nclean:\n\trm -f $(TARGETS) $(DEBUG_TARGETS) perftest_fixed.data *.net *~ *.obj *.exe *.tds noscale.txt withscale.txt scale_test_results.txt\n\nonlytrain: perftest_train\n\t@echo\n\t@echo Training network\n\t./perftest_train {} {}\n".format(num_input, num_output))
 
     f.close()
@@ -32,9 +32,9 @@ if __name__=='__main__':
 
     '''
 	run.py runs the generate.py with
-	- python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm fc
-	- python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm cluster
-	- python3 generate.py -i ./perf/perftest_fixed -p pulp -c parallel
+	- python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm fc
+	- python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm cluster
+	- python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c parallel
 
 	For each, it copies the output to the corresponding folder in wolfe-onBoardTest/ and runs `make clean all run`
 
@@ -43,16 +43,16 @@ if __name__=='__main__':
     args_dict = get_args();
 
     homedir = os.getcwd()
-    os.chdir("..")
+    os.chdir("../..")
     homedir = os.getcwd()
 
-    N_test = 3 # Number of repeatition for averaging the performance
+    N_test = 6 # Number of repeatition for averaging the performance
 
     #print(np.logspace(0.1, 2.7, 20, endpoint=True)*2)
 
 
-    for N_in in range(4, 1025, 32): # 4, 86, 4 # 4, 201, 8
-        for N_out in range(4, 1025, 32): # 4, 86, 4 # 4, 201, 8
+    for N_in in range(4, 1025, 32): # 4, 1025, 32
+        for N_out in range(4, 1025, 32): # 4, 1025, 32
             # In Mr. Wolf, L2 shared memory is 448KB.
             # Estimate the size used in L2 as function of N_in and N_out:
             # 4 = int32_t in bytes
@@ -71,12 +71,12 @@ if __name__=='__main__':
             # 2 * N_in = local_data_buffer
             # 2 * max(N_in, N_out) = neuron buffer
             # 2 * N_in * N_out = weights buffer
-            L1_size_estm = 4 * (2 * N_in + 2 * max(N_in, N_out) + 2 * N_in * N_out)
-            if L1_size_estm  > 59170:
-                print(L1_size_estm)
-                continue
+            #L1_size_estm = 4 * (2 * N_in + 2 * max(N_in, N_out) + 2 * N_in * N_out)
+            #if L1_size_estm  > 59170:
+            #    print(L1_size_estm)
+            #    continue
 
-            os.chdir(homedir+"/perf/")
+            os.chdir(homedir+"/perf/Nin-Nout-single-layer")
             gen_Makefile(N_in,N_out)
             os.system("python3 gen_stimuli.py generated_data/perftest {} {} {}".format(N_test, N_in, N_out))
             os.system("make clean all onlytrain &>/dev/null")
@@ -85,9 +85,9 @@ if __name__=='__main__':
             os.chdir(homedir)
             #print("#### run on fc");
             if args_dict["activ"]: # True, i.e. use activation
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm fc")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm fc")
             else:
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm fc --no-activation")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm fc --no-activation")
             os.system("mv -f ./output/* -t ./wolfe-onBoardTest/fc/")
             os.chdir("./wolfe-onBoardTest/fc/")
             os.system("make clean all run")
@@ -97,10 +97,23 @@ if __name__=='__main__':
             # run on cluster single core
             #print("#### run on singleriscy");
             os.chdir(homedir)
+            # Estimate if even single neuron dma transfer will be too big for
+            # L1 size
+            # In Mr. Wolf, L1 memory is 64KB.
+            # Estimate the size used in L2 as function of N_in and N_out:
+            # 4 = int32_t in bytes
+            # 2 * N_in = local_data_buffer
+            # 2 * max(N_in, N_out) = neuron buffer
+            # 2 * N_in * N_out = weights buffer
+            L1_size_estm = 4 * (2 * N_in + 2 * max(N_in, N_out) + 2 * (N_in+1))
+            if L1_size_estm  > 59170:
+                print("Singlecore riscy: Net size too large {}".format(L1_size_estm))
+                continue
+            # Proceed if net size not too large
             if args_dict['activ']: # True, i.e. use activation
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm cluster")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm cluster")
             else:
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c single -dm cluster --no-activation")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c single -dm cluster --no-activation")
             os.system("mv -f ./output/* -t ./wolfe-onBoardTest/cluster/singlecore/")
             os.chdir("./wolfe-onBoardTest/cluster/singlecore")
             os.system("make clean all run")
@@ -108,12 +121,25 @@ if __name__=='__main__':
             print("---- \t ---- \t ---- \t ----\n\n")
 
             # run on cluster parallel
-            os.chdir(homedir)
             #print("#### run on multiriscy");
+            os.chdir(homedir)
+            # Estimate if even single neuron (times max num cores) dma transfer
+            # will be too big for L1 size
+            # In Mr. Wolf, L1 memory is 64KB.
+            # Estimate the size used in L2 as function of N_in and N_out:
+            # 4 = int32_t in bytes
+            # 2 * N_in = local_data_buffer
+            # 2 * max(N_in, N_out) = neuron buffer
+            # 2 * N_in * N_out = weights buffer
+            L1_size_estm = 4 * (2 * N_in + 2 * max(N_in, N_out) + 2 * (N_in+1) * 8) # max num cores = 8
+            if L1_size_estm  > 59170:
+                print("Multicore riscy: Net size too large {}".format(L1_size_estm))
+                continue
+
             if args_dict['activ']: # True, i.e. use activation
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c parallel")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c parallel")
             else:
-                os.system("python3 generate.py -i ./perf/perftest_fixed -p pulp -c parallel --no-activation")
+                os.system("python3 generate.py -i ./perf/Nin-Nout-single-layer/perftest_fixed -p pulp -c parallel --no-activation")
             os.system("mv -f ./output/* -t ./wolfe-onBoardTest/cluster/multicore/")
             os.chdir("./wolfe-onBoardTest/cluster/multicore")
             os.system("make clean all run")

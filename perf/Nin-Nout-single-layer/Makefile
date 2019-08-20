@@ -19,4 +19,4 @@ clean:
 onlytrain: perftest_train
 	@echo
 	@echo Training network
-	./perftest_train 996 4
+	./perftest_train 996 68

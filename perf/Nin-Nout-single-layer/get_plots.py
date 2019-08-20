@@ -9,7 +9,7 @@ from matplotlib import collections  as mc
 
 
 def heatmap(data, row_labels, col_labels, labelsize, ax=None,
-            cbar_kw={}, cbarlabel="", xlabel="", ylabel="", **kwargs):
+            cbar_kw={}, cbarlabel="", xlabel="", ylabel="", fig_title=None, **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
 
@@ -37,9 +37,10 @@ def heatmap(data, row_labels, col_labels, labelsize, ax=None,
 
     # Plot the heatmap
     im = ax.imshow(data, **kwargs)
+    plt.title(fig_title, fontsize=labelsize)
 
     # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.03, pad=0.04, **cbar_kw)
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=labelsize)
     cbar.ax.tick_params(labelsize=labelsize)
     cbar.outline.set_visible(False)
@@ -149,10 +150,21 @@ def newline(p1, p2):
     ax.add_line(l)
     return l
 
-def addlines(ax, lines):
-    #lines = [[(4.5, 5.5), (4.5, 6.5)], [(4.5, 6.5), (5.5, 6.5)], [(5.5, 6.5), (6.5, 6.5)]]
+def addlines(ax, corners=None, lines=None, y_axis_size=None, color="k"):
+    # lines = [[(4.5, 5.5), (4.5, 6.5)], [(4.5, 6.5), (5.5, 6.5)], [(5.5, 6.5),
+    # (6.5, 6.5)]]
 
-    lc = mc.LineCollection(lines, color="k", linewidths=1)
+    lines = []
+    for i in range(len(corners)):
+        # put all other corners
+        blx = corners[i][0] # bottom left corner x axis
+        bly = y_axis_size-1-corners[i][1] # bottom left corner y axis
+        lines.append([(blx, bly), (blx+1, bly)])
+        lines.append([(blx, bly), (blx, bly-1)])
+        #lines.append([(blx+1, bly-1), (blx, bly-1)])
+        #lines.append([(blx+1, bly-1), (blx+1, bly)])
+
+    lc = mc.LineCollection(lines, color=color, linewidths=1)
     ax.add_collection(lc)
 
 
@@ -182,15 +194,41 @@ if __name__=='__main__':
     # perfname = "mean_cycles_"
     core_list = ["fc", "singleriscy", "multiriscy"]
 
+    use_dma = []
+    neuron_wise = []
+
     for core in core_list:
-        stats_2d = np.empty((in_maxsize, out_maxsize))
-        stats_2d[:] = np.nan
+
+        # Initialize
+        stats_2d_tmp = np.empty((in_maxsize, out_maxsize))
+        stats_2d_tmp[:] = np.nan
+
+        # Parse through all the measurements
         for i in range(len(stats)):
-            n_in = int(stats["NUM_INPUT_"+core][i]/in_step) - int(in_start/in_step)
-            n_out = int(stats["NUM_OUTPUT_"+core][i]/out_step) - int(out_start/out_step)
-            stats_2d[n_in, n_out] = stats["mean_cycles_"+core][i]
+            n_in = int((stats["NUM_INPUT_"+core][i] - in_start)/in_step)
+            n_out = int((stats["NUM_OUTPUT_"+core][i] - out_start)/out_step)
+            stats_2d_tmp[n_in, n_out] = stats["mean_cycles_"+core][i]
+            if stats["use_dma"][i] == 1:
+                use_dma.append((n_out-0.5, n_in-0.5))
+            if stats["neuron_wise"][i] == 1:
+                neuron_wise.append((n_out-0.5, n_in-0.5))
+
+        # Sort the labels
         in_labels = np.sort(np.unique(stats["NUM_INPUT_"+core].to_numpy()))
         out_labels = np.sort(np.unique(stats["NUM_OUTPUT_"+core].to_numpy()))
+
+        # Fit the matrix to the real size cutting the edges where the network
+        # doesn't fit anymore into L1
+        #stats_2d = stats_2d_tmp[0:len(in_labels), 0:len(out_labels)]
+        # Comment: in order to fit into a single column of the paper, we cut
+        # away also the asymmetric part. Comment out the next lines and
+        # uncomment the previous one if you want to plot all the data.
+        if len(in_labels) > len(out_labels):
+            in_labels = in_labels[:len(out_labels)]
+        else:
+            out_labels = out_labels[:len(in_labels)]
+        stats_2d = stats_2d_tmp[0:len(in_labels), 0:len(out_labels)]
+
         if core == "fc":
             stats_2d_fc = stats_2d
         if core == "singleriscy":
@@ -199,8 +237,11 @@ if __name__=='__main__':
 
             fig, ax = plt.subplots()
 
-            im, cbar = heatmap(np.flip(speedup_fc_singleriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Number of cycles", xlabel="Output size", ylabel="Input size")
+            im, cbar = heatmap(np.flip(speedup_fc_singleriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Single-Ri5cy Core wrt. Single-Ibex Core")
             texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+
+            # Lines to separate use_dma and neuron_wise
+            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
 
             fig.tight_layout()
             #plt.show()
@@ -213,8 +254,11 @@ if __name__=='__main__':
 
             fig, ax = plt.subplots()
 
-            im, cbar = heatmap(np.flip(speedup_single_multiriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Number of cycles", xlabel="Output size", ylabel="Input size")
+            im, cbar = heatmap(np.flip(speedup_single_multiriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Multi-Ri5cy Cores wrt. Single-Ri5cy Core")
             texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+
+            # Lines to separate use_dma and neuron_wise
+            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
 
             fig.tight_layout()
             #plt.show()
@@ -222,11 +266,20 @@ if __name__=='__main__':
             #fig.savefig('./plots/'+fname[:-4]+'_speedup_single_multiriscy.png', bbox_inches='tight')
             fig.savefig('./plots/'+fname[:-4]+'_speedup_single_multiriscy.pdf', bbox_inches='tight')
 
+        if core == "fc":
+            title_tmp = "Single-Ibex Core"
+        elif core == "singleriscy":
+            title_tmp = "Single-Ri5cy Core"
+        else:
+            title_tmp = "Multi-Ri5cy Cores"
 
         fig, ax = plt.subplots()
 
-        im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size")
-        texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+        im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Number of Cycles of Single-Layer MLP on "+title_tmp)
+        texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize-1)
+
+        # Lines to separate use_dma and neuron_wise
+        addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
 
         fig.tight_layout()
         #plt.show()
