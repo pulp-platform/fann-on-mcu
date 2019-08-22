@@ -122,7 +122,8 @@ if __name__=='__main__':
     os.chdir("../..")
     homedir = os.getcwd()
 
-    # Number of repeatition for averaging the performance
+    # Number of test samples to be saved in L2 memory
+    # For averaging the performance use NUM_REPEAT in test.c or cluster.c
     N_test =1
 
     # Number of input features and num neurons in output layer

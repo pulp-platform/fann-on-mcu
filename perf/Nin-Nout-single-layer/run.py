@@ -46,7 +46,8 @@ if __name__=='__main__':
     os.chdir("../..")
     homedir = os.getcwd()
 
-    N_test = 11 # Number of repeatition for averaging the performance
+    N_test = 1 # Number of test samples to be saved in L2 memory
+    # For averaging the performance use NUM_REPEAT in test.c or cluster.c
 
     #print(np.logspace(0.1, 2.7, 20, endpoint=True)*2)
 
