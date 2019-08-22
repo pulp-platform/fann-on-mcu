@@ -315,7 +315,7 @@ try:
         print("Failed to generate test_data from file")
         exit(-1)
 
-    # WRONG: the last to addends are considering already the layer-wise dma
+    # WRONG: the last two addends are considering already the layer-wise dma
     # transfer case
     # instead, it should calculate if the whole network without dma transfer
     # fits or not into the L1, if not, then use dma. Next calculates if the
@@ -332,6 +332,13 @@ try:
         use_dma = False
     else:
         use_dma = True
+
+    # In Mr. Wolf the L2 private memory is 32kB for data and code, while the shared memory is
+    # 448kB. To save the variables in shared memory, use RT_L2_DATA
+    if estimated_memory_size > 26000:
+        use_shared_L2 = True
+    else:
+        use_shared_L2 = False
 
     if use_dma:
 
@@ -372,16 +379,26 @@ try:
     #insert includes
     if args_dict['platform'] == "pulp":
         saveString = saveString + '#include "rt/rt_api.h"\n'
+
     saveString = saveString + '#include "fann.h" \n'
     saveString = saveString + '#include "fann_structs.h" \n\n'
 
-    # Declare the variables with const member attribute if platform is arm
+    # Declare the variables with const member attribute if platform is arm to
+    # save them in flash, otherwise without to save in RAM
+    savetoflash = 0
     if args_dict['platform'] == "arm":
-        saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
-        saveString = saveString + 'const fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
-        saveString = saveString + 'const fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
-        saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n'
-        saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+        if savetoflash:
+            saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+            saveString = saveString + 'const fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+            saveString = saveString + 'const fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+            saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n'
+            saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+        else:
+            saveString = saveString + 'enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+            saveString = saveString + 'fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+            saveString = saveString + 'fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+            saveString = saveString + 'fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n'
+            saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
 
     # If platform is pulp and the data are declared in L1 (without using dma,
     # i.e. use_dma = False, the const attribute can't be used because of error:
@@ -448,11 +465,21 @@ try:
 
         else: # on fabric controller
 
-            saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
-            saveString = saveString + 'fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
-            saveString = saveString + 'fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
-            saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
-            saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+            if use_shared_L2:
+
+                saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+                saveString = saveString + 'RT_L2_DATA fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+                saveString = saveString + 'RT_L2_DATA fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+                saveString = saveString + 'RT_L2_DATA fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+                saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+
+            else:
+
+                saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
+                saveString = saveString + 'const fann_neuron fann_neurons[' + str(len(fann["generated_neurons"])) + '] = {' + ', '.join(generatedNeurons) + '};\n\n'
+                saveString = saveString + 'const fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
+                saveString = saveString + 'const fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n\n'
+                saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
 
             # Also copy the right fann.c to the
             # output/ folder
@@ -515,9 +542,14 @@ try:
 
     # Declare the variables with const member attribute if platform is arm
     if args_dict['platform'] == "arm":
-        saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
-        saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
-        saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+        if savetoflash:
+            saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+        else:
+            saveString = saveString + "int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
 
     # If platform is pulp and the data are declared in L1 (without using dma,
     # i.e. use_dma = False, the const attribute can't be used because of error:
@@ -536,9 +568,16 @@ try:
             saveString = saveString + "RT_L2_DATA int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
         else:
             # no const with RT_L2_DATA attribute
+            ## The test_data_input saved anyways in L2 shared
+            #if use_shared_L2:
             saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
-            saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            saveString = saveString + "RT_L2_DATA fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
             saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
+
+            # else:
+            #     saveString = saveString + "const int NUM_TESTS = " + str(len(outs)) + ";\n\n"
+            #     saveString = saveString + "fann_type test_data_input[" + str(len(ins)) + "] = {" + ', '.join(ins) + "};\n\n"
+            #     saveString = saveString + "const int test_data_output[" + str(len(outs)) + "] = {" + ', '.join(outs) + "};\n\n"
 
             # DONE RT_L2_DATA test_data.h for fc private memory (const) or
             # shared memory (RT_L2_DATA)

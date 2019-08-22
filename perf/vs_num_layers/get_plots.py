@@ -53,7 +53,7 @@ if __name__=='__main__':
     ax.plot(num_hidden_layers, mean_cycles_singleriscy/1000, "s", label="Single-Ri5cy Core")
     ax.plot(num_hidden_layers, mean_cycles_multiriscy/1000, "o", label="Multi-Ri5cy Cores")
 
-    ax.set_xticks(range(1, len(num_hidden_layers)))
+    ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
 
     #legend_elements = [Line2D([0], [0], marker="^", label='Single-Ibex Core'), Line2D([0], [0], marker='s', label='Single-Ri5cy Core'), Line2D([0], [0], marker='o', label='Multi-Ri5cy Core'), Patch(facecolor='orange', label='Color Patch')]
 
@@ -72,7 +72,7 @@ if __name__=='__main__':
     fig.tight_layout()
     #plt.show()
 
-    fig.savefig('./plots/'+fname[:-4]+'_num_cycles.png', bbox_inches='tight')
+    fig.savefig('./plots/'+fname[:-4]+'_num_cycles.pdf', bbox_inches='tight')
 
 
     fig, ax = plt.subplots()
@@ -80,7 +80,10 @@ if __name__=='__main__':
     ax.plot(num_hidden_layers, mean_cycles_fc/mean_cycles_singleriscy, "o", label="Single-Ri5cy/Single-Ibex")
     ax.plot(num_hidden_layers, mean_cycles_singleriscy/mean_cycles_multiriscy, "o", label="Multi-Ri5cy/Single-Ri5cy")
 
-    ax.set_xticks(range(1, len(num_hidden_layers)))
+    #print(mean_cycles_fc/mean_cycles_singleriscy)
+    #print(mean_cycles_singleriscy/mean_cycles_multiriscy)
+
+    ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
 
     ax.legend()
     ax.set_xlabel("Number of hidden layers")
@@ -97,5 +100,5 @@ if __name__=='__main__':
     fig.tight_layout()
     #plt.show()
 
-    fig.savefig('./plots/'+fname[:-4]+'_speedup.png', bbox_inches='tight')
+    fig.savefig('./plots/'+fname[:-4]+'_speedup.pdf', bbox_inches='tight')
     

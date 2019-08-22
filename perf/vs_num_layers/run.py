@@ -123,7 +123,7 @@ if __name__=='__main__':
     homedir = os.getcwd()
 
     # Number of repeatition for averaging the performance
-    N_test = 11
+    N_test =1
 
     # Number of input features and num neurons in output layer
     N_in = 100
@@ -137,8 +137,8 @@ if __name__=='__main__':
         print("n_layers {}".format(n_layers))
 
         # Compute the ranges for the list with number of neurons for every layer
-        min_n_neurons = 4
-        n_neurons_step = 16
+        min_n_neurons = 8
+        n_neurons_step = 8
         max_n_neurons = min_n_neurons + int((n_layers - 1)*n_neurons_step/2) + 1
 
         list_n_neurons = []

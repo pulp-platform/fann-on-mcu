@@ -46,13 +46,13 @@ if __name__=='__main__':
     os.chdir("../..")
     homedir = os.getcwd()
 
-    N_test = 6 # Number of repeatition for averaging the performance
+    N_test = 11 # Number of repeatition for averaging the performance
 
     #print(np.logspace(0.1, 2.7, 20, endpoint=True)*2)
 
 
-    for N_in in range(4, 1025, 32): # 4, 1025, 32
-        for N_out in range(4, 1025, 32): # 4, 1025, 32
+    for N_in in range(4, 709, 32): # 4, 1025, 32
+        for N_out in range(4, 709, 32): # 4, 1025, 32
             # In Mr. Wolf, L2 shared memory is 448KB.
             # Estimate the size used in L2 as function of N_in and N_out:
             # 4 = int32_t in bytes

@@ -7,6 +7,10 @@
 
 #define PERF_COUNTER
 
+// for taking measurements on board
+#define NUM_REPEAT 1003
+#define WARM_CACHE 3
+
 RT_CL_DATA fann_type local_data_buffer[2][NUM_INPUT];
 static int buff_index = 0;
 
@@ -28,9 +32,18 @@ void cluster_entry(void *arg){
     rt_dma_memcpy((int)test_data_input, (int)local_data_buffer[buff_index], NUM_INPUT*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in);
     buff_index ^= 1;
 
+#ifdef NUM_REPEAT
+    buff_index ^= 1;
+    rt_dma_wait(&id_in);
+#endif
+
     int corr = 0;
     int i = 0;
-    for(i = 0; i < NUM_TESTS; ++i) { // NUM_TESTS
+#ifdef NUM_REPEAT
+    for(i = 0; i < NUM_REPEAT; ++i) {
+#else
+    for(i = 0; i < NUM_TESTS; ++i) {
+
 			  // note: the test data has been rescaled offline. For a real application don't forget to scale the input data by MULTIPLIER!
 
       // Wait for previous iteration input transfer. This is supposed to be already finished if processing is long enough
@@ -39,6 +52,7 @@ void cluster_entry(void *arg){
       // Enqueue the input buffer transfer for the next iteration so that the DMA transfers it while we do computation
       rt_dma_memcpy((int)(test_data_input + (NUM_INPUT * (i+1))), (int)local_data_buffer[buff_index], NUM_INPUT*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in);
       buff_index ^= 1;
+#endif
 
 #ifdef PERF_COUNTER
 
@@ -68,7 +82,8 @@ void cluster_entry(void *arg){
 //  printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
 //  printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
 
-  if (i >= 1) {
+// To measure warm cache
+  if (i >= WARM_CACHE) {
     sum_cycles += rt_perf_read(RT_PERF_CYCLES);
     sum_instr += rt_perf_read(RT_PERF_INSTR);
   }
@@ -78,6 +93,7 @@ void cluster_entry(void *arg){
 
 #endif
 
+#ifndef NUM_REPEAT
 int cla = 0;
 	if ((calc_out[0] > calc_out[1]) && (calc_out[0] > calc_out[2])) {
 	    cla = 0;
@@ -102,18 +118,30 @@ int cla = 0;
   if (cla == test_data_output[i]) {
     ++corr;
   }
-*/      
+*/
+#endif
+
     }
+
+#ifdef NUM_REPEAT
+    printf("#### NUM_INPUT_singleriscy %d\n", NUM_INPUT);
+    printf("#### NUM_OUTPUT_singleriscy %d\n", NUM_OUTPUT);
+    printf("#### mean_cycles_singleriscy %d\n", sum_cycles/(NUM_REPEAT-WARM_CACHE));
+    printf("#### mean_instr_singleriscy %d\n", sum_instr/(NUM_REPEAT-WARM_CACHE));
+
+#else
+    // Wait for previous iteration input transfer. This is supposed to be already finished if processing is long enough
+    rt_dma_wait(&id_in);
 
     //printf("mean cycles over num test is %d, mean instr is %d\n", sum_cycles/NUM_TESTS, sum_instr/NUM_TESTS);
     //printf("#### run on singleriscy\n");
     printf("#### NUM_INPUT_singleriscy %d\n", NUM_INPUT);
     printf("#### NUM_OUTPUT_singleriscy %d\n", NUM_OUTPUT);
-    printf("#### mean_cycles_singleriscy %d\n", sum_cycles/(NUM_TESTS-1));
-    printf("#### mean_instr_singleriscy %d\n", sum_instr/(NUM_TESTS-1));
+    printf("#### mean_cycles_singleriscy %d\n", sum_cycles/(NUM_TESTS-WARM_CACHE));
+    printf("#### mean_instr_singleriscy %d\n", sum_instr/(NUM_TESTS-WARM_CACHE));
 
     //printf("correct: %d out of %d\n", corr, NUM_TESTS);
-
+#endif
 
 
 }

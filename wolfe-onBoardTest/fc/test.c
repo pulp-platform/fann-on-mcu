@@ -6,6 +6,9 @@
 
 #include <rt/rt_api.h>
 
+// for taking measurements on board
+#define NUM_REPEAT 1003
+#define WARM_CACHE 3
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +21,11 @@ int main(int argc, char *argv[])
 
     int corr = 0;
     int i = 0;
+#ifdef NUM_REPEAT
+    for(i = 0; i < NUM_REPEAT; ++i) {
+#else
     for(i = 0; i < NUM_TESTS; ++i) {
+#endif
 			  // note: the test data has been rescaled offline. For a real application don't forget to scale the input data by MULTIPLIER!
 			
 
@@ -47,7 +54,11 @@ int main(int argc, char *argv[])
   rt_perf_reset(&perf);
   rt_perf_start(&perf);
 
+#ifdef NUM_REPEAT
+  calc_out = fann_run(test_data_input);
+#else
   calc_out = fann_run(test_data_input + NUM_INPUT * i);
+#endif
 
   rt_perf_stop(&perf);
 
@@ -57,14 +68,15 @@ int main(int argc, char *argv[])
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_IMISS));
   //printf("imiss stalls: %d\n", rt_perf_read(RT_PERF_TCDM_CONT));
 
-  if (i >= 1) {
+// To measure warm cache
+  if (i >= WARM_CACHE) {
     sum_cycles += rt_perf_read(RT_PERF_CYCLES);
     sum_instr += rt_perf_read(RT_PERF_INSTR);
   }
 
 
 
-
+#ifndef NUM_REPEAT
 
         int cla = 0;
 	if ((calc_out[0] > calc_out[1]) && (calc_out[0] > calc_out[2])) {
@@ -79,17 +91,27 @@ int main(int argc, char *argv[])
         if (cla == test_data_output[i]) {
             ++corr;
         }
+#endif
         
     }
 
+#ifdef NUM_REPEAT
     //printf("mean cycles over num test is %d, mean instr is %d\n", sum_cycles/NUM_TESTS, sum_instr/NUM_TESTS);
     //printf("#### run on fc\n");
     printf("#### NUM_INPUT_fc %d\n", NUM_INPUT);
     printf("#### NUM_OUTPUT_fc %d\n", NUM_OUTPUT);
-    printf("#### mean_cycles_fc %d\n", sum_cycles/(NUM_TESTS-1));
-    printf("#### mean_instr_fc %d\n", sum_instr/(NUM_TESTS-1));
+    printf("#### mean_cycles_fc %d\n", sum_cycles/(NUM_REPEAT-WARM_CACHE));
+    printf("#### mean_instr_fc %d\n", sum_instr/(NUM_REPEAT-WARM_CACHE));
 
     printf("ending tests....\n");
+#else
+    printf("#### NUM_INPUT_fc %d\n", NUM_INPUT);
+    printf("#### NUM_OUTPUT_fc %d\n", NUM_OUTPUT);
+    printf("#### mean_cycles_fc %d\n", sum_cycles/(NUM_TESTS-WARM_CACHE));
+    printf("#### mean_instr_fc %d\n", sum_instr/(NUM_TESTS-WARM_CACHE));
+
+    printf("ending tests....\n");
+#endif
 
 #ifndef FIXEDFANN
     float accuracy = corr / (float)i * 100;

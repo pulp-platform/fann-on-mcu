@@ -12,7 +12,7 @@
 fann_type *fann_run(fann_type * input)
 {
     fann_type *neurons, neuron_sum, steepness;
-		const fann_type *weights;
+    fann_type *weights;
     unsigned int num_connections, activation_function, layer_it, neuron_it, last_neuron, first_neuron;
 
 #ifdef FIXEDFANN
@@ -27,10 +27,14 @@ fann_type *fann_run(fann_type * input)
 #endif
 
 #ifdef FIXEDFANN
-    arm_fill_q31(MULTIPLIER, neuron_values, NUM_NEURONS); // setting the bias neuron values
+    // arm_fill_q31(MULTIPLIER, neuron_values, NUM_NEURONS); // setting the bias neuron values
+    // Comment: not necessary, it's appended later, see below: append bias
+
     arm_copy_q31(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT); // copy input data
 #else
-    arm_fill_f32(1.0f, neuron_values, NUM_NEURONS);
+    // arm_fill_f32(1.0f, neuron_values, NUM_NEURONS);
+    // Comment: not necessary, it's appended later, see below: append bias
+
     arm_copy_f32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
 #endif
 
@@ -97,6 +101,16 @@ fann_type *fann_run(fann_type * input)
 
 #endif // ACTIVATIONS
 
+        if(CONNECTION_RATE >= 1) {
+          if(network_type == FANN_NETTYPE_SHORTCUT) {
+            neurons = neuron_values;
+          } else {
+            neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
+          }
+        } else {
+          // not supported yet...
+        }
+
 
         for(neuron_it = first_neuron; neuron_it != last_neuron; ++neuron_it) {
 					
@@ -109,14 +123,14 @@ fann_type *fann_run(fann_type * input)
             weights = fann_weights + fann_neurons[neuron_it].first_connection;
             neuron_sum = 0;
 
-            if(CONNECTION_RATE >= 1) {
-                if(network_type == FANN_NETTYPE_SHORTCUT) {
-                    neurons = neuron_values;
-                } else {
-                    neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
-                }
+            if (CONNECTION_RATE >= 1) {
+
+              // Append bias (MULTIPLIER)
+              neurons[num_connections-1] = MULTIPLIER;
+
 
 #ifdef FIXEDFANN
+
                 arm_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
 #else
                 arm_dot_prod_f32((fann_type *)weights, neurons, num_connections, &neuron_sum);
