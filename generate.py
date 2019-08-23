@@ -328,48 +328,54 @@ try:
 
     estimated_memory_size = 2*4*int((len(ins)/len(outs))) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + len(fann["generated_neurons"]) * 4
     print("Estimated memory size whole network {}".format(estimated_memory_size))
-    if estimated_memory_size < 59170: # In Mr. Wolf, L1 memory is 64KB - stack sizes
-        use_dma = False
-    else:
-        use_dma = True
+    if args_dict['platform'] == 'arm':
+        if estimated_memory_size < 80000:
+            savetoflash = False
+        else:
+            savetoflash = True
+    if args_dict['platform'] == 'pulp':
+        if estimated_memory_size < 59170: # In Mr. Wolf, L1 memory is 64KB - stack sizes
+            use_dma = False
+        else:
+            use_dma = True
 
-    # In Mr. Wolf the L2 private memory is 32kB for data and code, while the shared memory is
-    # 448kB. To save the variables in shared memory, use RT_L2_DATA
-    if estimated_memory_size > 26000:
-        use_shared_L2 = True
-    else:
-        use_shared_L2 = False
+        # In Mr. Wolf the L2 private memory is 32kB for data and code, while the shared memory is
+        # 448kB. To save the variables in shared memory, use RT_L2_DATA
+        if estimated_memory_size > 26000:
+            use_shared_L2 = True
+        else:
+            use_shared_L2 = False
 
-    if use_dma:
+        if use_dma:
 
-        # In Mr. Wolf, L1 memory is 64KB.
-        # Estimate if the largest layer can fit into L1:
-        # 4 = int32_t in bytes
-        # 2 * N_in = local_data_buffer
-        # 2 * max(N_in, N_out) = neuron buffer
-        # 2 * N_in * N_out = weights buffer
-        L1_size_estm = 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights)
-        if L1_size_estm  > 59170:
-            print("Estimated memory size largest layer {}".format(L1_size_estm))
-            dma_neuron_wise = True
-            if args_dict['comp'] == "parallel":
-                largest_layer_weights = largest_layer * 8
-                if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
-                    print("Parallel: Net size too large")
-                    exit(-1)
+            # In Mr. Wolf, L1 memory is 64KB.
+            # Estimate if the largest layer can fit into L1:
+            # 4 = int32_t in bytes
+            # 2 * N_in = local_data_buffer
+            # 2 * max(N_in, N_out) = neuron buffer
+            # 2 * N_in * N_out = weights buffer
+            L1_size_estm = 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights)
+            if L1_size_estm  > 59170:
+                print("Estimated memory size largest layer {}".format(L1_size_estm))
+                dma_neuron_wise = True
+                if args_dict['comp'] == "parallel":
+                    largest_layer_weights = largest_layer * 8
+                    if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
+                        print("Parallel: Net size too large")
+                        exit(-1)
+                else:
+                    largest_layer_weights = largest_layer
+                    if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
+                        print("Single core riscy: Net size too large")
+                        exit(-1)
             else:
-                largest_layer_weights = largest_layer
-                if 4 * (2 * int(len(ins)/len(outs)) + 2 * largest_layer + 2 * largest_layer_weights) > 59170:
-                    print("Single core riscy: Net size too large")
-                    exit(-1)
+                dma_neuron_wise = False
         else:
             dma_neuron_wise = False
-    else:
-        dma_neuron_wise = False
 
-    #use_dma = True
-    #dma_neuron_wise = True
-    print("\n#### use_dma {}\n#### neuron_wise {}".format(use_dma, dma_neuron_wise))
+        #use_dma = True
+        #dma_neuron_wise = True
+        print("\n#### use_dma {}\n#### neuron_wise {}".format(use_dma, dma_neuron_wise))
     print("\n#### num_hidden_layers {}\n".format(len(fann["generated_layers"])-1-1)) # only hidden layers, FANN counts the output layer as a layer (actually also the input layer as layer)
 
     # generate file contents for fann_net.h
@@ -385,7 +391,6 @@ try:
 
     # Declare the variables with const member attribute if platform is arm to
     # save them in flash, otherwise without to save in RAM
-    savetoflash = 0
     if args_dict['platform'] == "arm":
         if savetoflash:
             saveString = saveString + 'const enum fann_nettype_enum network_type = ' + fann["network_type"] + ';\n\n'
@@ -399,6 +404,9 @@ try:
             saveString = saveString + 'fann_type fann_weights[' + str(len(generatedConnections)) + '] = {' + ', '.join(generatedConnections) + '};\n\n'
             saveString = saveString + 'fann_layer fann_layers[' + str(len(fann["generated_layers"])) + '] = {' + ', '.join(fann["generated_layers"]) + '};\n'
             saveString = saveString + 'fann_type neuron_values[NUM_NEURONS];\n\n'
+
+        print("\ncopying ./arm/* ./output/\n")
+        os.system("cp ./arm/* ./output/")
 
     # If platform is pulp and the data are declared in L1 (without using dma,
     # i.e. use_dma = False, the const attribute can't be used because of error:
