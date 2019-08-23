@@ -220,6 +220,8 @@ if __name__ == '__main__':
 
             #os.system("sleep 1")
 
+    print("END")
+
     os.chdir(homedir+"/perf/arm-Nin-Nout-single-layer")
     keys = perf_dict.keys()
     #print(keys)

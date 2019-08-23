@@ -333,6 +333,7 @@ try:
             savetoflash = False
         else:
             savetoflash = True
+        print("\n#### savetoflash {}\n".format(savetoflash))
     if args_dict['platform'] == 'pulp':
         if estimated_memory_size < 59170: # In Mr. Wolf, L1 memory is 64KB - stack sizes
             use_dma = False
