@@ -325,6 +325,8 @@ if __name__ == '__main__':
 
         #os.system("sleep 1")
 
+    print("END")
+
     os.chdir(homedir+"/perf/arm-vs-num-layers")
     keys = perf_dict.keys()
     print(keys)
