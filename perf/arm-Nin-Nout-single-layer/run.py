@@ -33,7 +33,7 @@ def gen_Makefile(num_input, num_output):
 
     f = open('Makefile', 'w')
 
-    f.write("GCC=gcc\nCFLAGS=-I ~/fann/src/include\nLDFLAGS=-L ~/fann/src/\n\nTARGETS = perftest_train perftest_test perftest_test_fixed\nDEBUG_TARGETS = perftest_debug\n\nall: $(TARGETS)\n\n%: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 $< -o $@ -lfann -lm\n\n%_fixed: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 -DFIXEDFANN $< -o $@ -lfixedfann -lm\n\nclean:\n\trm -f $(TARGETS) $(DEBUG_TARGETS) perftest_fixed.data *.net *~ *.obj *.exe *.tds noscale.txt withscale.txt scale_test_results.txt\n\nonlytrain: perftest_train\n\t@echo\n\t@echo Training network\n\t./perftest_train {} {}\n".format(num_input, num_output))
+    f.write("GCC=gcc\nCFLAGS=-I ~/fann/src/include\nLDFLAGS=-L ~/fann/src/\n\nTARGETS = perftest_train perftest_test perftest_test_fixed\nDEBUG_TARGETS = perftest_debug\n\nall: $(TARGETS)\n\n%: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 $< -o $@ -lfann -lm\n\n%_fixed: %.c Makefile\n\t$(GCC) $(CFLAGS) $(LDFLAGS) -O3 -DFIXEDFANN $< -o $@ -lfixedfann -lm\n\nclean:\n\trm -f $(TARGETS) $(DEBUG_TARGETS) perftest_fixed.data perftest_float.data *.net *~ *.obj *.exe *.tds noscale.txt withscale.txt scale_test_results.txt\n\nonlytrain: perftest_train\n\t@echo\n\t@echo Training network\n\t./perftest_train {} {}\n".format(num_input, num_output))
 
     f.close()
 
@@ -183,9 +183,9 @@ if __name__ == '__main__':
             #time.sleep(5)
             #print("I am here! " + homedir)
             if args_dict["activ"]: # True, i.e. use activation
-                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_fixed -p arm")
+                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_float -p arm --activation")
             else:
-                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_fixed -p arm --no-activation")
+                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_float -p arm --no-activation")
 
             #sys.stdout.flush()
             #print("wait for 5 seconds")

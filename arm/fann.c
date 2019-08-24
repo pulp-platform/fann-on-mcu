@@ -125,14 +125,17 @@ fann_type *fann_run(fann_type * input)
 
             if (CONNECTION_RATE >= 1) {
 
-              // Append bias (MULTIPLIER)
-              neurons[num_connections-1] = MULTIPLIER;
-
 
 #ifdef FIXEDFANN
 
+              // Append bias (MULTIPLIER)
+              neurons[num_connections-1] = MULTIPLIER;
+
                 arm_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
 #else
+                // Append bias (MULTIPLIER)
+                neurons[num_connections-1] = 1.0f;
+
                 arm_dot_prod_f32((fann_type *)weights, neurons, num_connections, &neuron_sum);
 #endif
             } else {

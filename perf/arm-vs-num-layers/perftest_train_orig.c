@@ -120,6 +120,7 @@ int main (int argc)
 	decimal_point = fann_save_to_fixed(ann, "perftest_fixed.net");
 	test_data = fann_read_train_from_file("./generated_data/perftest.test");
 	fann_save_train_to_fixed(test_data, "perftest_fixed.data", decimal_point);
+  fann_save_train(test_data, "perftest_float.data");
 
 	printf("Cleaning up.\n");
 	fann_destroy_train(data);

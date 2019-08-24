@@ -14,7 +14,7 @@ all: $(TARGETS)
 	$(GCC) $(CFLAGS) $(LDFLAGS) -O3 -DFIXEDFANN $< -o $@ -lfixedfann -lm
 
 clean:
-	rm -f $(TARGETS) $(DEBUG_TARGETS) perftest_fixed.data *.net *~ *.obj *.exe *.tds noscale.txt withscale.txt scale_test_results.txt
+	rm -f $(TARGETS) $(DEBUG_TARGETS) perftest_fixed.data perftest_float.data *.net *~ *.obj *.exe *.tds noscale.txt withscale.txt scale_test_results.txt
 
 onlytrain: perftest_train
 	@echo
