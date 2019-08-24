@@ -1,4 +1,4 @@
-import sys
+import sys, argparse
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -7,6 +7,24 @@ import matplotlib.lines as mlines
 from matplotlib import collections  as mc
 from collections import OrderedDict
 
+def get_args():
+
+    dict = {}
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', help='the name of csv file to be plotted')
+    parser.add_argument('--compare', dest='compare', choices=['pulp', 'armfloat', 'both'], default=None, help='Compare the input measurement with the same measurements taken with pulp and/or with arm float version.')
+    
+    args = parser.parse_args()
+
+    if args.input == None:
+        parser.error("Missing input filename to save the data. --help for more details.")
+    else:
+        dict['fname'] = args.input
+
+    dict['compare'] = args.compare
+
+    return dict
 
 def get_stats_savetoflash(fname):
 
@@ -242,7 +260,9 @@ if __name__=='__main__':
     Input: filename of csv file containing the measurements.
     """
 
-    fname = sys.argv[1]
+    args_dict = get_args()
+
+    fname = args_dict['fname']
 
     stats = pd.read_csv(fname)
     in_start = 4 #stats["NUM_INPUT_fc"][0]
@@ -301,7 +321,7 @@ if __name__=='__main__':
 
     fig, ax = plt.subplots()
 
-    im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Number of Cycles of Single-Layer MLP on "+title_tmp)
+    im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Runtime Measurements of Single-Layer MLP on "+title_tmp)
     texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize-1)
 
     # Lines to separate use_dma and neuron_wise
@@ -313,20 +333,123 @@ if __name__=='__main__':
     #fig.savefig('./plots/'+fname[:-4]+'_'+core+'.png', bbox_inches='tight')
     fig.savefig('./plots/'+fname[:-4]+'.pdf', bbox_inches='tight')
 
-    ######   ---------------------      Comparison with PULP    ---------------------      ######
+    ######   ------------   Comparison with PULP and/or ARM float version    -----------    ######
 
     stats_arm = stats_2d
 
-    # read pulp stats
-    stats = pd.read_csv("../Nin-Nout-single-layer/"+fname)
+    if args_dict['compare'] == 'pulp' or args_dict['compare'] == 'both':
 
-    # perfname = "mean_cycles_"
-    core_list = ["fc", "singleriscy", "multiriscy"]
+        # read pulp stats
+        stats = pd.read_csv("../Nin-Nout-single-layer/"+fname)
 
-    use_dma = []
-    neuron_wise = []
+        # perfname = "mean_cycles_"
+        core_list = ["fc", "singleriscy", "multiriscy"]
 
-    for core in core_list:
+        use_dma = []
+        neuron_wise = []
+
+        for core in core_list:
+
+            # Initialize
+            stats_2d_tmp = np.empty((in_maxsize, out_maxsize))
+            stats_2d_tmp[:] = np.nan
+
+            # Parse through all the measurements
+            for i in range(len(stats)):
+                n_in = int((stats["NUM_INPUT_"+core][i] - in_start)/in_step)
+                n_out = int((stats["NUM_OUTPUT_"+core][i] - out_start)/out_step)
+                stats_2d_tmp[n_in, n_out] = stats["mean_cycles_"+core][i]
+                if stats["use_dma"][i] == 1:
+                    use_dma.append((n_out-0.5, n_in-0.5))
+                if stats["neuron_wise"][i] == 1:
+                    neuron_wise.append((n_out-0.5, n_in-0.5))
+
+            # Sort the labels
+            in_labels = np.sort(np.unique(stats["NUM_INPUT_"+core].to_numpy()))
+            out_labels = np.sort(np.unique(stats["NUM_OUTPUT_"+core].to_numpy()))
+
+            # Fit the matrix to the real size cutting the edges where the network
+            # doesn't fit anymore into L1
+            #stats_2d = stats_2d_tmp[0:len(in_labels), 0:len(out_labels)]
+            # Comment: in order to fit into a single column of the paper, we cut
+            # away also the asymmetric part. Comment out the next lines and
+            # uncomment the previous one if you want to plot all the data.
+            if len(in_labels) > len(out_labels):
+                in_labels = in_labels[:len(out_labels)]
+            else:
+                out_labels = out_labels[:len(in_labels)]
+            stats_2d = stats_2d_tmp[0:len(in_labels), 0:len(out_labels)]
+
+            if core == "fc":
+                #stats_2d_fc = stats_2d
+                speedup_arm_fc = stats_2d/stats_arm
+
+                fig, ax = plt.subplots()
+
+                im, cbar = heatmap(np.flip(speedup_arm_fc, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Cortex-M4 wrt. Single-Ibex Core")
+                texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+
+                # Lines to separate use_dma and neuron_wise
+                addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+                addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
+
+                fig.tight_layout()
+                #plt.show()
+
+                #fig.savefig('./plots/'+fname[:-4]+'_speedup_fc_singleriscy.png', bbox_inches='tight')
+                fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_fc.pdf', bbox_inches='tight')
+
+            if core == "singleriscy":
+                speedup_arm_singleriscy = stats_arm/stats_2d
+                #stats_2d_sr = stats_2d
+
+                fig, ax = plt.subplots()
+
+                im, cbar = heatmap(np.flip(speedup_arm_singleriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Single-Ri5cy Core wrt. Cortex-M4")
+                texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+
+                # Lines to separate use_dma and neuron_wise
+                addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+                addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
+
+                fig.tight_layout()
+                #plt.show()
+
+                #fig.savefig('./plots/'+fname[:-4]+'_speedup_fc_singleriscy.png', bbox_inches='tight')
+                fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_singleriscy.pdf', bbox_inches='tight')
+
+            if core == "multiriscy":
+                speedup_arm_multiriscy = stats_arm/stats_2d
+
+                fig, ax = plt.subplots()
+
+                im, cbar = heatmap(np.flip(speedup_arm_multiriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Multi-Ri5cy Cores wrt. Cortex-M4")
+                texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+
+                # Lines to separate use_dma and neuron_wise
+                addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+                addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
+
+                fig.tight_layout()
+                #plt.show()
+
+                #fig.savefig('./plots/'+fname[:-4]+'_speedup_single_multiriscy.png', bbox_inches='tight')
+                fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_multiriscy.pdf', bbox_inches='tight')
+
+
+    if args_dict['compare'] == 'armfloat' or args_dict['compare'] == 'both':
+
+        savetoflash_fixed = savetoflash
+
+        # read pulp stats
+        stats = pd.read_csv("../arm-Nin-Nout-single-layer/"+fname[:-4]+"_float.csv")
+
+        # savetoflash for info on memory size
+        savetoflash_dict = get_stats_savetoflash(fname[:-4]+'_float.txt')
+        # Update the dictionary with info on memory size
+        stats = dict_update(stats, savetoflash_dict)
+        savetoflash = []
+
 
         # Initialize
         stats_2d_tmp = np.empty((in_maxsize, out_maxsize))
@@ -334,17 +457,15 @@ if __name__=='__main__':
 
         # Parse through all the measurements
         for i in range(len(stats)):
-            n_in = int((stats["NUM_INPUT_"+core][i] - in_start)/in_step)
-            n_out = int((stats["NUM_OUTPUT_"+core][i] - out_start)/out_step)
-            stats_2d_tmp[n_in, n_out] = stats["mean_cycles_"+core][i]
-            if stats["use_dma"][i] == 1:
-                use_dma.append((n_out-0.5, n_in-0.5))
-            if stats["neuron_wise"][i] == 1:
-                neuron_wise.append((n_out-0.5, n_in-0.5))
+            n_in = int((stats["NUM_INPUT"][i] - in_start)/in_step)
+            n_out = int((stats["NUM_OUTPUT"][i] - out_start)/out_step)
+            stats_2d_tmp[n_in, n_out] = stats["mean_cycles"][i]
+            if stats["savetoflash"][i] == 1:
+                savetoflash.append((n_out-0.5, n_in-0.5))
 
         # Sort the labels
-        in_labels = np.sort(np.unique(stats["NUM_INPUT_"+core].to_numpy()))
-        out_labels = np.sort(np.unique(stats["NUM_OUTPUT_"+core].to_numpy()))
+        in_labels = np.sort(np.unique(stats["NUM_INPUT"].to_numpy()))
+        out_labels = np.sort(np.unique(stats["NUM_OUTPUT"].to_numpy()))
 
         # Fit the matrix to the real size cutting the edges where the network
         # doesn't fit anymore into L1
@@ -358,80 +479,39 @@ if __name__=='__main__':
             out_labels = out_labels[:len(in_labels)]
         stats_2d = stats_2d_tmp[0:len(in_labels), 0:len(out_labels)]
 
-        if core == "fc":
-            #stats_2d_fc = stats_2d
-            speedup_arm_fc = stats_2d/stats_arm
+        title_tmp = "Cortex-M4 Floating Point"
 
-            fig, ax = plt.subplots()
+        fig, ax = plt.subplots()
 
-            im, cbar = heatmap(np.flip(speedup_arm_fc, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Cortex-M4 wrt. Single-Ibex Core")
-            texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+        im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Runtime Measurements of Single-Layer MLP on "+title_tmp)
+        texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize-1)
 
-            # Lines to separate use_dma and neuron_wise
-            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
-            addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
+        # Lines to separate use_dma and neuron_wise
+        addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="dimgray")
 
-            fig.tight_layout()
-            #plt.show()
+        fig.tight_layout()
+        #plt.show()
 
-            #fig.savefig('./plots/'+fname[:-4]+'_speedup_fc_singleriscy.png', bbox_inches='tight')
-            fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_fc.pdf', bbox_inches='tight')
+        #fig.savefig('./plots/'+fname[:-4]+'_'+core+'.png', bbox_inches='tight')
+        fig.savefig('./plots/'+fname[:-4]+'_float.pdf', bbox_inches='tight')
 
-        if core == "singleriscy":
-            speedup_arm_singleriscy = stats_arm/stats_2d
-            #stats_2d_sr = stats_2d
+        ### ---------- Compare arm fixed with float version ---------- ###
 
-            fig, ax = plt.subplots()
+        #stats_2d_fc = stats_2d
+        speedup_fixed_float = stats_2d/stats_arm
 
-            im, cbar = heatmap(np.flip(speedup_arm_singleriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Single-Ri5cy Core wrt. Cortex-M4")
-            texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
+        fig, ax = plt.subplots()
 
-            # Lines to separate use_dma and neuron_wise
-            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
-            addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
+        im, cbar = heatmap(np.flip(speedup_fixed_float, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Cortex-M4 Fixed Point wrt. Floating Point")
+        texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
 
-            fig.tight_layout()
-            #plt.show()
+        # Lines to separate use_dma and neuron_wise
+        addlines(ax, corners=savetoflash_fixed, y_axis_size=len(in_labels), color="dimgray")
+        addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
 
-            #fig.savefig('./plots/'+fname[:-4]+'_speedup_fc_singleriscy.png', bbox_inches='tight')
-            fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_singleriscy.pdf', bbox_inches='tight')
+        fig.tight_layout()
+        #plt.show()
 
-        if core == "multiriscy":
-            speedup_arm_multiriscy = stats_arm/stats_2d
-
-            fig, ax = plt.subplots()
-
-            im, cbar = heatmap(np.flip(speedup_arm_multiriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Multi-Ri5cy Cores wrt. Cortex-M4")
-            texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
-
-            # Lines to separate use_dma and neuron_wise
-            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
-            addlines(ax, corners=savetoflash, y_axis_size=len(in_labels), color="steelblue")
-
-            fig.tight_layout()
-            #plt.show()
-
-            #fig.savefig('./plots/'+fname[:-4]+'_speedup_single_multiriscy.png', bbox_inches='tight')
-            fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_multiriscy.pdf', bbox_inches='tight')
-
-        # if core == "fc":
-        #     title_tmp = "Single-Ibex Core"
-        # elif core == "singleriscy":
-        #     title_tmp = "Single-Ri5cy Core"
-        # else:
-        #     title_tmp = "Multi-Ri5cy Cores"
-
-        # fig, ax = plt.subplots()
-
-        # im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Number of Cycles of Single-Layer MLP on "+title_tmp)
-        # texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize-1)
-
-        # # Lines to separate use_dma and neuron_wise
-        # addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
-
-        # fig.tight_layout()
-        # #plt.show()
-
-        # #fig.savefig('./plots/'+fname[:-4]+'_'+core+'.png', bbox_inches='tight')
-        # fig.savefig('./plots/'+fname[:-4]+'_'+core+'.pdf', bbox_inches='tight')
+        #fig.savefig('./plots/'+fname[:-4]+'_speedup_fc_singleriscy.png', bbox_inches='tight')
+        fig.savefig('./plots/'+fname[:-4]+'_speedup_arm_fixed_float.pdf', bbox_inches='tight')
 

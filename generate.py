@@ -84,7 +84,7 @@ def mapToStringOfDType(dtype, arr):#dtype = "float" or "int"
 #print(sys.argv)
 #fname = sys.argv[1]
 
-args_dict = get_args();
+args_dict = get_args()
 print("\nInput arguments:\n{}\n".format(args_dict))
 fname = args_dict['fname']
 
