@@ -26,4 +26,9 @@ void arm_copy_f32(
                   float32_t * pDst,
                   uint32_t blockSize);
 
+void arm_fill_f32(
+                  float32_t value,
+                  float32_t * pDst,
+                  uint32_t blockSize);
+
 #endif //FANN_FANN_UTILS_H_

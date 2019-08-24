@@ -180,7 +180,7 @@ int main(void)
 				cycles = *DWT_CYCCNT;
 
         if (i>=WARM_CACHE) {
-          tot_cycles += cycles;
+        tot_cycles += cycles;
         }
 
 
@@ -213,7 +213,7 @@ int main(void)
     
 
     #ifdef NUM_REPEAT
-    snprintf(aTxBuffer, TXBUFFERSIZE, "//////////////// #### mean_cycles %d\n#### NUM_INPUT %d\n#### NUM_OUTPUT %d\n#### break\r\n", tot_cycles/(NUM_REPEAT-WARM_CACHE), NUM_INPUT, NUM_OUTPUT);
+    snprintf(aTxBuffer, TXBUFFERSIZE, "//////////////// #### mean_cycles %d\n#### NUM_INPUT %d\n#### NUM_OUTPUT %d\n#### correct %d\n#### break\r\n", tot_cycles/(NUM_REPEAT-WARM_CACHE), NUM_INPUT, NUM_OUTPUT, corr);
     #else
     snprintf(aTxBuffer, TXBUFFERSIZE, "//////////////// #### mean_cycles %d\n#### NUM_INPUT %d\n#### NUM_OUTPUT %d\n#### correct %d\n#### break\r\n", tot_cycles/(NUM_TESTS-WARM_CACHE), NUM_INPUT, NUM_OUTPUT, corr);
     #endif

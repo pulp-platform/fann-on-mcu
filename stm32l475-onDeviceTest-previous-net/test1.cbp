@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+<FileVersion major="1" minor="6" />
+<Project>
+<Option title="test1" />
+<Option makefile_is_custom="1" />
+<Option pch_mode="2" />
+<Option compiler="arm-elf-gcc" />
+<MakeCommands>
+	<Build command="$make -f $makefile $target" />
+	<CompileFile command="$make -f $makefile $file" />
+	<Clean command="$make -f $makefile clean$target" />
+	<DistClean command="$make -f $makefile distclean$target" />
+	<AskRebuildNeeded command="$make -f $makefile flash" />
+	<SilentBuild command="$make -f $makefile $target &gt; $(CMD_NULL)" />
+</MakeCommands>
+<Build>
+	<Target title="Debug">
+	</Target>
+	<Target title="Release">
+	<MakeCommands>
+		<Build command="$make -f $makefile $target" />
+		<CompileFile command="$make -f $makefile $file" />
+		<Clean command="$make -f $makefile clean$target" />
+		<DistClean command="$make -f $makefile distclean$target" />
+		<AskRebuildNeeded command="$make -f $makefile flash" />
+		<SilentBuild command="$make -f $makefile $target &gt; $(CMD_NULL)" />
+	</MakeCommands>
+	</Target>
+</Build>
+
+<Unit filename="Inc/stm32l4xx_hal_conf.h"/>
+<Unit filename="Inc/stm32l4xx_it.h"/>
+<Unit filename="Inc/main.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_exti.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dfsdm.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pcd.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pcd_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_cortex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_qspi.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ramfunc.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_def.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usb.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h"/>
+<Unit filename="Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l4xx.h"/>
+<Unit filename="Drivers/CMSIS/Device/ST/STM32L4xx/Include/system_stm32l4xx.h"/>
+<Unit filename="Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l475xx.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_armv8mml.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_armv8mbl.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_armcc.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_iccarm.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm23.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm4.h"/>
+<Unit filename="Drivers/CMSIS/Include/mpu_armv8.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm33.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_compiler.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm0plus.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_armclang.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_sc000.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_sc300.h"/>
+<Unit filename="Drivers/CMSIS/Include/mpu_armv7.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm7.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm0.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_gcc.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm1.h"/>
+<Unit filename="Drivers/CMSIS/Include/cmsis_version.h"/>
+<Unit filename="Drivers/CMSIS/Include/core_cm3.h"/>
+<Unit filename="Drivers/CMSIS/Include/tz_context.h"/>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dfsdm.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_qspi.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Src/main.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Src/stm32l4xx_hal_msp.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Src/stm32l4xx_it.c"><Option compilerVar="CC" /></Unit>
+<Unit filename="Src/system_stm32l4xx.c"><Option compilerVar="CC" /></Unit>
+<Extensions>
+<envvars />
+<code_completion />
+<debugger>
+  <search_path add="./build" />
+  <remote_debugging>
+      <options conn_type="0" serial_baud="115200" ip_address="localhost" ip_port="4242" additional_cmds="reset" />
+  </remote_debugging>
+  <remote_debugging target="Debug">
+      <options conn_type="0" serial_baud="115200" ip_address="localhost" ip_port="4242" additional_cmds="monitor reset init&#x0A;monitor halt&#x0A;monitor soft_reset_halt&#x0A;file ./build/test1.elf&#x0A;load&#x0A;monitor_soft_reset_halt" extended_remote="1" />
+  </remote_debugging>
+</debugger>
+<lib_finder disable_auto="1" />
+</Extensions>
+</Project>
+</CodeBlocks_project_file>
