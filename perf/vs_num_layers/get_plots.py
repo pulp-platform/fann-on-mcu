@@ -62,12 +62,13 @@ if __name__=='__main__':
     ax.set_ylabel("Number of cycles in unit of thousands")
     plt.title("Number of cycles")
 
+
     # Draw vertical lines to separate no use dma, use dma layer wise, use dma
     # neuron wise
     if use_dma_i != 0:
-        ax.axvline(x=use_dma_i, color="k", linewidth=1)
+        ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=1)
     if neuron_wise_i !=0:
-        ax.axvline(x=neuron_wise_i, color="k", linewidth=1)
+        ax.axvline(x=neuron_wise_i+0.5, color="k", linewidth=1)
 
     fig.tight_layout()
     #plt.show()
@@ -93,9 +94,9 @@ if __name__=='__main__':
     # Draw vertical lines to separate no use dma, use dma layer wise, use dma
     # neuron wise
     if use_dma_i != 0:
-        ax.axvline(x=use_dma_i, color="k", linewidth=1)
+        ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=1)
     if neuron_wise_i !=0:
-        ax.axvline(x=neuron_wise_i, color="k", linewidth=1)
+        ax.axvline(x=neuron_wise_i+0.5, color="k", linewidth=1)
 
     fig.tight_layout()
     #plt.show()
