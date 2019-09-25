@@ -30,9 +30,16 @@ fann_type *fann_run(fann_type * input)
     fann_type max_sum = 0;
 #endif
 
+#ifdef FIXEDFANN
+    arm_fill_q31(MULTIPLIER, neuron_values, NUM_NEURONS); // setting the bias neuron values
+    arm_copy_q31(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT); // copy input data
+
+#else
+
     /* first set the input */
     arm_fill_f32(1.0f, neuron_values, NUM_NEURONS);
     arm_copy_f32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
+#endif
 
     for(layer_it = 1; layer_it != NUM_LAYERS; ++layer_it)
     {
@@ -61,8 +68,11 @@ fann_type *fann_run(fann_type * input)
                 {
                     neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
                 }
-
+#ifdef FIXEDFANN
+                arm_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
+#else
                 arm_dot_prod_f32(weights, neurons, num_connections, &neuron_sum);
+#endif
             }
             else
             {

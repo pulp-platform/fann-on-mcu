@@ -183,9 +183,9 @@ if __name__ == '__main__':
             #time.sleep(5)
             #print("I am here! " + homedir)
             if args_dict["activ"]: # True, i.e. use activation
-                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_float -p arm --activation")
+                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_fixed -p arm --activation")
             else:
-                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_float -p arm --no-activation")
+                os.system("python3 generate.py -i ./perf/arm-Nin-Nout-single-layer/perftest_fixed -p arm --no-activation")
 
             #sys.stdout.flush()
             #print("wait for 5 seconds")
