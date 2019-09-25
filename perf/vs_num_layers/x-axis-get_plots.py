@@ -185,14 +185,19 @@ if __name__=='__main__':
 
     fig, ax = plt.subplots()
 
-    ax.plot(num_hidden_layers, mean_cycles_fc/mean_cycles_singleriscy, "s", label="Single-Ri5cy/Single-Ibex")
-    ax.plot(num_hidden_layers, mean_cycles_singleriscy/mean_cycles_multiriscy, "o", label="Multi-Ri5cy/Single-Ri5cy")
+    ax.plot(num_hidden_units, mean_cycles_fc/mean_cycles_singleriscy, "s", label="Single-Ri5cy/Single-Ibex")
+    ax.plot(num_hidden_units, mean_cycles_singleriscy/mean_cycles_multiriscy, "o", label="Multi-Ri5cy/Single-Ri5cy")
 
     #print(mean_cycles_fc/mean_cycles_singleriscy)
     #print(mean_cycles_singleriscy/mean_cycles_multiriscy)
 
-    ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
+    #ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
     
+
+    #ax.set_xlim(ax.get_xlim())
+    ax.set_xticks(num_hidden_units)
+    ax.set_xticklabels(num_hidden_layers)
+
     #ax.set_xticklabels(list_xticklabels, rotation=-60, ha='left')
     plt.ylim(0.8, max(ax.get_yticks())+0.4)
     #plt.ylim(1, max(ax.get_yticks())+0.2)
@@ -230,8 +235,8 @@ if __name__=='__main__':
     ax2 = ax.twiny()
     ax2.set_xlim(ax.get_xlim())
     #print(tot_hidden_units(list_hidden_units).flatten())
-    #ax2.set_xticks(list_hidden_units)
-    ax2.set_xticks(num_hidden_layers)
+    ax2.set_xticks(num_hidden_units)
+    #ax2.set_xticks(num_hidden_layers)
     ax2.set_xticklabels(num_hidden_units, rotation=45)
     ax2.set_xlabel("Total number of hidden units")
     #print(ax2.get_xlim())

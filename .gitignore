@@ -1,3 +1,6 @@
+paper/
+hidden*
+
 wolfe-onBoardTest-previous-net/
 stm32l475-onDeviceTest-bigger-net/
 

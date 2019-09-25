@@ -329,7 +329,7 @@ try:
     estimated_memory_size = 2*4*int((len(ins)/len(outs))) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + len(fann["generated_neurons"]) * 4
     print("Estimated memory size whole network {}".format(estimated_memory_size))
     if args_dict['platform'] == 'arm':
-        if estimated_memory_size < 80000:
+        if estimated_memory_size < 120000:
             savetoflash = False
         else:
             savetoflash = True
@@ -376,7 +376,7 @@ try:
 
         #use_dma = True
         #dma_neuron_wise = True
-        print("\n#### use_dma {}\n#### neuron_wise {}".format(use_dma, dma_neuron_wise))
+        print("\n#### use_dma {}\n#### neuron_wise {}\n#### use_shared_L2 {}".format(use_dma, dma_neuron_wise, use_shared_L2))
     print("\n#### num_hidden_layers {}\n".format(len(fann["generated_layers"])-1-1)) # only hidden layers, FANN counts the output layer as a layer (actually also the input layer as layer)
 
     # generate file contents for fann_net.h
