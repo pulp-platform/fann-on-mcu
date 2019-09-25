@@ -15,7 +15,8 @@ def get_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', help='the name of csv file to be plotted')
-    parser.add_argument('--compare', dest='compare', choices=['pulp', 'armfloat', 'both'], default=None, help='Compare the input measurement with the same measurements taken with pulp and/or with arm float version.')
+    parser.add_argument('--compare', dest='compare', choices=['pulp', 'armfloat', 'both', 'vs_gvsoc'], default=None, help='Compare the input measurement with the same measurements taken with pulp and/or with arm float version.')
+    parser.add_argument('--comparegvsoc', dest='comparegvsoc', default=None, help='Compare the input measurement with the same measurements taken on gvsoc.')
     
     args = parser.parse_args()
 
@@ -25,6 +26,8 @@ def get_args():
         dict['fname'] = args.input
 
     dict['compare'] = args.compare
+
+    dict['comparegvsoc'] = args.comparegvsoc
 
     return dict
 
@@ -92,6 +95,12 @@ def dict_update(dictA, dictB):
 
     return dictC
 
+def hlinearrowtext(y, xmin, xmax, label='', head_width=10):
+    ax.hlines(y, xmin+0.25, xmax-0.3, label=label, linewidth=0.8, linestyle='dotted')
+    ax.text(xmax - (xmax-xmin+0.5)/2, y, label, ha='center', va='bottom')
+    ax.arrow(xmax-0.3, y, 0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
+    ax.arrow(xmin+0.25, y, -0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
+
 
 if __name__=='__main__':
 
@@ -139,7 +148,7 @@ if __name__=='__main__':
 
     # Draw vertical lines to separate when data saved to RAM when to FLASH
     if savetoflash_i != 0:
-        ax.axvline(x=savetoflash_i+0.5, color="k", ls='-.', linewidth=1)
+        ax.axvline(x=savetoflash_i+0.5, color="k", ls='-.', linewidth=0.8)
 
     fig.tight_layout()
     #plt.show()
@@ -190,12 +199,19 @@ if __name__=='__main__':
         # Draw vertical lines to separate no use dma, use dma layer wise, use dma
         # neuron wise. For ARM when in RAM when in FLASH
         if use_dma_i != 0:
-            ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=1)
+            ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
+            hlinearrowtext(700, 1, use_dma_i+0.5, label='L1')
+            hlinearrowtext(700, use_dma_i+0.5, 24, label='L2')
         if neuron_wise_i !=0:
-            ax.axvline(x=neuron_wise_i+0.5, color="k", linewidth=1)
+            ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
+            hlinearrowtext(600, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise')
+            hlinearrowtext(500, neuron_wise_i+0.5, 24, label='neuron-wise')
         if savetoflash_i != 0:
-            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=1)
+            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
+            hlinearrowtext(300, 1, savetoflash_i+0.5, label='RAM')
+            hlinearrowtext(300, savetoflash_i+0.5, 24, label='FLASH')
 
+        plt.grid(True, color='lightgray', alpha=0.4, linewidth=0.5)
 
         fig.tight_layout()
         #plt.show()
@@ -205,7 +221,7 @@ if __name__=='__main__':
 
         fig, ax = plt.subplots()
 
-        ax.plot(num_hidden_layers, mean_cycles_fc/mean_cycles_arm, "v", label="Cortex-M4/Single-Ibex")
+        ax.plot(num_hidden_layers, mean_cycles_arm/mean_cycles_fc, "v", label="Single-Ibex/Cortex-M4")
         ax.plot(num_hidden_layers, mean_cycles_arm/mean_cycles_singleriscy, "s", label="Single-Ri5cy/Cortex-M4")
         ax.plot(num_hidden_layers, mean_cycles_arm/mean_cycles_multiriscy, "o", label="Multi-Ri5cy/Cortex-M4")
 
@@ -213,6 +229,9 @@ if __name__=='__main__':
         #print(mean_cycles_singleriscy/mean_cycles_multiriscy)
 
         ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
+        #ax.set_yticks(max((mean_cycles_arm/mean_cycles_fc, )))
+        plt.ylim(0.1, int(max(ax.get_yticks())))
+        ax.set_yticks(np.arange(1,max(ax.get_yticks()), 1))
 
         ax.legend()
         ax.set_xlabel("Number of hidden layers")
@@ -222,11 +241,19 @@ if __name__=='__main__':
         # Draw vertical lines to separate no use dma, use dma layer wise, use dma
         # neuron wise
         if use_dma_i != 0:
-            ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=1)
+            ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
+            hlinearrowtext(5.75, 1, use_dma_i+0.5, label='L1', head_width=0.1)
+            hlinearrowtext(5.75, use_dma_i+0.5, 24, label='L2', head_width=0.1)
         if neuron_wise_i !=0:
-            ax.axvline(x=neuron_wise_i+0.5, color="k", linewidth=1)
+            ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
+            hlinearrowtext(5, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', head_width=0.1)
+            hlinearrowtext(4.25, neuron_wise_i+0.5, 24, label='neuron-wise', head_width=0.1)
         if savetoflash_i != 0:
-            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=1)
+            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
+            hlinearrowtext(3, 1, savetoflash_i+0.5, label='RAM', head_width=0.1)
+            hlinearrowtext(3, savetoflash_i+0.5, 24, label='FLASH', head_width=0.1)
+
+        plt.grid(True, color='lightgray', alpha=0.4, linewidth=0.5)
 
         fig.tight_layout()
         #plt.show()
@@ -271,7 +298,7 @@ if __name__=='__main__':
 
         # Draw vertical lines to separate when data saved to RAM when to FLASH
         if savetoflash_i != 0:
-            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=1)
+            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
 
         fig.tight_layout()
         #plt.show()
@@ -297,9 +324,9 @@ if __name__=='__main__':
         # Draw vertical lines to separate when data saved to RAM when to FLASH
         if savetoflash_i_fixed != savetoflash_i:
             if savetoflash_i_fixed != 0:
-                ax.axvline(x=savetoflash_i+0.5, color="k", ls="--", linewidth=1)
+                ax.axvline(x=savetoflash_i+0.5, color="k", ls="--", linewidth=0.8)
         if savetoflash_i != 0:
-            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=1)
+            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
 
         fig.tight_layout()
         #plt.show()
@@ -325,9 +352,9 @@ if __name__=='__main__':
         # neuron wise
         if savetoflash_i_fixed != savetoflash_i:
             if savetoflash_i_fixed != 0:
-                ax.axvline(x=savetoflash_i+0.5, color="k", ls="--", linewidth=1)
+                ax.axvline(x=savetoflash_i+0.5, color="k", ls="--", linewidth=0.8)
         if savetoflash_i != 0:
-            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=1)
+            ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
 
         fig.tight_layout()
         #plt.show()
