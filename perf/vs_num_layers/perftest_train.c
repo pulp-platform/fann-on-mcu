@@ -41,7 +41,7 @@ int main (int argc)
 	const unsigned int num_output = 8;
 
 	// num_layers = 1 hidden layer + 1 output layer
-	const unsigned int num_layers = 42;
+	const unsigned int num_layers = 19;
 	const unsigned int num_neurons_hidden0 = 8;
 	const unsigned int num_neurons_hidden1 = 8;
 	const unsigned int num_neurons_hidden2 = 16;
@@ -59,29 +59,6 @@ int main (int argc)
 	const unsigned int num_neurons_hidden14 = 64;
 	const unsigned int num_neurons_hidden15 = 64;
 	const unsigned int num_neurons_hidden16 = 72;
-	const unsigned int num_neurons_hidden17 = 72;
-	const unsigned int num_neurons_hidden18 = 80;
-	const unsigned int num_neurons_hidden19 = 80;
-	const unsigned int num_neurons_hidden20 = 88;
-	const unsigned int num_neurons_hidden21 = 88;
-	const unsigned int num_neurons_hidden22 = 96;
-	const unsigned int num_neurons_hidden23 = 96;
-	const unsigned int num_neurons_hidden24 = 104;
-	const unsigned int num_neurons_hidden25 = 104;
-	const unsigned int num_neurons_hidden26 = 112;
-	const unsigned int num_neurons_hidden27 = 112;
-	const unsigned int num_neurons_hidden28 = 120;
-	const unsigned int num_neurons_hidden29 = 120;
-	const unsigned int num_neurons_hidden30 = 128;
-	const unsigned int num_neurons_hidden31 = 128;
-	const unsigned int num_neurons_hidden32 = 136;
-	const unsigned int num_neurons_hidden33 = 136;
-	const unsigned int num_neurons_hidden34 = 144;
-	const unsigned int num_neurons_hidden35 = 144;
-	const unsigned int num_neurons_hidden36 = 152;
-	const unsigned int num_neurons_hidden37 = 152;
-	const unsigned int num_neurons_hidden38 = 160;
-	const unsigned int num_neurons_hidden39 = 160;
 	const float desired_error = (const float) 0;
 	const unsigned int max_epochs = 1450;
 	const unsigned int epochs_between_reports = 10;
@@ -92,7 +69,7 @@ int main (int argc)
 	unsigned int decimal_point;
 
 	printf("Creating network.\n");
-	ann = fann_create_standard(num_layers, num_input, num_neurons_hidden0, num_neurons_hidden1, num_neurons_hidden2, num_neurons_hidden3, num_neurons_hidden4, num_neurons_hidden5, num_neurons_hidden6, num_neurons_hidden7, num_neurons_hidden8, num_neurons_hidden9, num_neurons_hidden10, num_neurons_hidden11, num_neurons_hidden12, num_neurons_hidden13, num_neurons_hidden14, num_neurons_hidden15, num_neurons_hidden16, num_neurons_hidden17, num_neurons_hidden18, num_neurons_hidden19, num_neurons_hidden20, num_neurons_hidden21, num_neurons_hidden22, num_neurons_hidden23, num_neurons_hidden24, num_neurons_hidden25, num_neurons_hidden26, num_neurons_hidden27, num_neurons_hidden28, num_neurons_hidden29, num_neurons_hidden30, num_neurons_hidden31, num_neurons_hidden32, num_neurons_hidden33, num_neurons_hidden34, num_neurons_hidden35, num_neurons_hidden36, num_neurons_hidden37, num_neurons_hidden38, num_neurons_hidden39, num_output);
+	ann = fann_create_standard(num_layers, num_input, num_neurons_hidden0, num_neurons_hidden1, num_neurons_hidden2, num_neurons_hidden3, num_neurons_hidden4, num_neurons_hidden5, num_neurons_hidden6, num_neurons_hidden7, num_neurons_hidden8, num_neurons_hidden9, num_neurons_hidden10, num_neurons_hidden11, num_neurons_hidden12, num_neurons_hidden13, num_neurons_hidden14, num_neurons_hidden15, num_neurons_hidden16, num_output);
 	data = fann_read_train_from_file("./generated_data/perftest.train");
 
 	fann_set_activation_steepness_hidden(ann, 1);

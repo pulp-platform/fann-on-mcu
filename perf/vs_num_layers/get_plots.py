@@ -28,11 +28,11 @@ def get_args():
 
     return dict
 
-def hlinearrowtext(y, xmin, xmax, label='', head_width=10):
-    ax.hlines(y, xmin+0.25, xmax-0.3, label=label, linewidth=0.8, linestyle='dotted')
-    ax.text(xmax - (xmax-xmin+0.5)/2, y, label, ha='center', va='bottom')
-    ax.arrow(xmax-0.3, y, 0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
-    ax.arrow(xmin+0.25, y, -0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
+def hlinearrowtext(y, xmin, xmax, label='', head_width=10, **kwargs):
+    ax.hlines(y, xmin+0.25, xmax-0.3, label=label, linewidth=0.8, linestyle='dotted', **kwargs)
+    ax.text(xmax - (xmax-xmin+0.5)/2, y, label, ha='center', va='bottom', **kwargs)
+    ax.arrow(xmax-0.3, y, 0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, length_includes_head=True, fc='white', **kwargs)
+    ax.arrow(xmin+0.25, y, -0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, length_includes_head=True, fc='white', **kwargs)
 
 def tot_hidden_units(x):
         num_hidden_units_list=np.empty((1,1), int)
@@ -138,24 +138,24 @@ if __name__=='__main__':
 
     ax.legend()
     ax.set_xlabel("Number of hidden layers")
-    ax.set_ylabel("Number of cycles in unit of thousands")
-    plt.title("Number of cycles")
+    ax.set_ylabel("Number of cycles in unit of thousands", fontsize=12)
+    #plt.title("Number of cycles")
 
 
     # Draw vertical lines to separate no use dma, use dma layer wise, use dma
     # neuron wise
     if use_dma_i != 0:
         ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
-        hlinearrowtext(700, 1, use_dma_i+0.5, label='L1')
-        hlinearrowtext(700, use_dma_i+0.5, 24, label='L2')
+        hlinearrowtext(700, 1, use_dma_i+0.5, label='L1', color='dimgray')
+        hlinearrowtext(700, use_dma_i+0.5, 24, label='L2', color='dimgray')
     if neuron_wise_i !=0:
         ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
-        hlinearrowtext(600, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise')
-        hlinearrowtext(500, neuron_wise_i+0.5, 24, label='neuron-wise')
+        hlinearrowtext(600, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', color='dimgray')
+        hlinearrowtext(500, neuron_wise_i+0.5, 24, label='neuron-wise', color='dimgray')
     if use_shared_L2_i !=0:
         ax.axvline(x=use_shared_L2_i+0.5, color="k", ls=(0, (1, 10)), linewidth=0.8)
-        hlinearrowtext(500, 1, use_shared_L2_i+0.5, label='private L2')
-        hlinearrowtext(400, use_shared_L2_i+0.5, 24, label='shared L2')
+        hlinearrowtext(500, 1, use_shared_L2_i+0.5, label='private L2', color='dimgray')
+        hlinearrowtext(400, use_shared_L2_i+0.5, 24, label='shared L2', color='dimgray')
 
     if args_dict['comparegvsoc'] is not None:
 
@@ -173,6 +173,14 @@ if __name__=='__main__':
         ax.plot(num_hidden_layers_gvsoc, mean_cycles_multiriscy_gvsoc/1000, "o", markeredgecolor="None", markerfacecolor='#2ca02c', alpha=0.3)
 
     plt.grid(True, color='lightgray', alpha=0.4, linewidth=0.5)
+
+    ax2 = ax.twiny()
+    ax2.set_xlim(ax.get_xlim())
+    #print(tot_hidden_units(list_hidden_units).flatten())
+    #ax2.set_xticks(list_hidden_units)
+    ax2.set_xticks(num_hidden_layers)
+    ax2.set_xticklabels(num_hidden_units, rotation=45)
+    ax2.set_xlabel("Total number of hidden units")
 
     fig.tight_layout()
     #plt.show()
@@ -209,16 +217,16 @@ if __name__=='__main__':
     # neuron wise
     if use_dma_i != 0:
         ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
-        hlinearrowtext(3.5, 1, use_dma_i+0.5, label='L1', head_width=0.05)
-        hlinearrowtext(3.5, use_dma_i+0.5, 24, label='L2', head_width=0.05)
+        hlinearrowtext(4, 1, use_dma_i+0.5, label='L1', head_width=0.05, color='dimgray')
+        hlinearrowtext(4, use_dma_i+0.5, 24, label='L2', head_width=0.05, color='dimgray')
     if neuron_wise_i !=0:
         ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
-        hlinearrowtext(4.5, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', head_width=0.05)
-        hlinearrowtext(4, neuron_wise_i+0.5, 24, label='neuron-wise', head_width=0.05)
+        hlinearrowtext(3.5, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', head_width=0.05, color='dimgray')
+        hlinearrowtext(3.5, neuron_wise_i+0.5, 24, label='neuron-wise', head_width=0.05, color='dimgray')
     if use_shared_L2_i !=0:
         ax.axvline(x=use_shared_L2_i+0.5, color="k", ls=(0, (1, 10)), linewidth=0.8)
-        hlinearrowtext(2.5, 1, use_shared_L2_i+0.5, label='private L2', head_width=0.05)
-        hlinearrowtext(2.5, use_shared_L2_i+0.5, 24, label='shared L2', head_width=0.05)
+        hlinearrowtext(2.5, 1, use_shared_L2_i+0.5, label='private L2', head_width=0.05, color='dimgray')
+        hlinearrowtext(2.5, use_shared_L2_i+0.5, 24, label='shared L2', head_width=0.05, color='dimgray')
     
     if args_dict['comparegvsoc'] is not None:
 

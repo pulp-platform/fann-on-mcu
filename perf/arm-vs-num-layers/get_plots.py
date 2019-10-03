@@ -95,11 +95,29 @@ def dict_update(dictA, dictB):
 
     return dictC
 
-def hlinearrowtext(y, xmin, xmax, label='', head_width=10):
-    ax.hlines(y, xmin+0.25, xmax-0.3, label=label, linewidth=0.8, linestyle='dotted')
-    ax.text(xmax - (xmax-xmin+0.5)/2, y, label, ha='center', va='bottom')
-    ax.arrow(xmax-0.3, y, 0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
-    ax.arrow(xmin+0.25, y, -0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, color='k', length_includes_head=True, fc='white')
+def hlinearrowtext(y, xmin, xmax, label='', head_width=10, **kwargs):
+    ax.hlines(y, xmin+0.25, xmax-0.3, label=label, linewidth=0.8, linestyle='dotted', **kwargs)
+    ax.text(xmax - (xmax-xmin+0.5)/2, y, label, ha='center', va='bottom', **kwargs)
+    ax.arrow(xmax-0.3, y, 0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, length_includes_head=True, fc='white', **kwargs)
+    ax.arrow(xmin+0.25, y, -0.2, 0, linewidth=0.8, head_width=head_width, head_length=0.25, length_includes_head=True, fc='white', **kwargs)
+
+def tot_hidden_units(x):
+        num_hidden_units_list=np.empty((1,1), int)
+        #print("direct", x)
+        #print(num_hidden_units_list.shape, np.array([0]).shape)
+        for i in range(len(x)):
+            x1 = int(np.squeeze(x[i]))
+            if x1 == 0:
+                num_hidden_units_list = np.append(num_hidden_units_list, np.array([[0]]), axis=0)
+                #print(num_hidden_units_list)
+            else:
+                num_hidden_units=0
+                for l in np.arange(1,x1+1):
+                    num_hidden_units += (l%2 + int(l//2))*8
+                num_hidden_units_list = np.append(num_hidden_units_list, np.array([[num_hidden_units]]), axis=0)
+
+        #print(num_hidden_units_list[1:])
+        return num_hidden_units_list[1:]
 
 
 if __name__=='__main__':
@@ -173,13 +191,18 @@ if __name__=='__main__':
         mean_cycles_singleriscy = stats["mean_cycles_singleriscy"]
         mean_cycles_multiriscy = stats["mean_cycles_multiriscy"]
 
+        num_hidden_units = (tot_hidden_units(num_hidden_layers)).flatten()
+
         use_dma_i = 0
         neuron_wise_i = 0
+        use_shared_L2_i = 0
         for i in range(len(num_hidden_layers)-1):
             if stats["use_dma"][i] == 0 and stats["use_dma"][i+1] == 1:
                 use_dma_i = i + 1
             if stats["neuron_wise"][i] == 0 and stats["neuron_wise"][i+1] == 1:
                 neuron_wise_i = i + 1
+            if stats["use_shared_L2"][i] == 0 and stats["use_shared_L2"][i+1] == 1:
+                use_shared_L2_i = i + 1
 
 
         fig, ax = plt.subplots()
@@ -193,25 +216,37 @@ if __name__=='__main__':
 
         ax.legend()
         ax.set_xlabel("Number of hidden layers")
-        ax.set_ylabel("Number of cycles in unit of thousands")
-        plt.title("Runtime Measurements")
+        ax.set_ylabel("Number of cycles in unit of thousands", fontsize=12)
+        #plt.title("Runtime Measurements")
 
         # Draw vertical lines to separate no use dma, use dma layer wise, use dma
         # neuron wise. For ARM when in RAM when in FLASH
         if use_dma_i != 0:
             ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
-            hlinearrowtext(700, 1, use_dma_i+0.5, label='L1')
-            hlinearrowtext(700, use_dma_i+0.5, 24, label='L2')
+            hlinearrowtext(650, 1, use_dma_i+0.5, label='L1', color='dimgray')
+            hlinearrowtext(650, use_dma_i+0.5, 24, label='L2', color='dimgray')
         if neuron_wise_i !=0:
             ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
-            hlinearrowtext(600, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise')
-            hlinearrowtext(500, neuron_wise_i+0.5, 24, label='neuron-wise')
+            hlinearrowtext(525, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', color='dimgray')
+            hlinearrowtext(525, neuron_wise_i+0.5, 24, label='neuron-wise', color='dimgray')
+        if use_shared_L2_i !=0:
+            ax.axvline(x=use_shared_L2_i+0.5, color="k", ls=(0, (1, 10)), linewidth=0.8)
+            hlinearrowtext(400, 1, use_shared_L2_i+0.5, label='private L2', color='dimgray')
+            hlinearrowtext(400, use_shared_L2_i+0.5, 24, label='shared L2', color='dimgray')
         if savetoflash_i != 0:
             ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
-            hlinearrowtext(300, 1, savetoflash_i+0.5, label='RAM')
-            hlinearrowtext(300, savetoflash_i+0.5, 24, label='FLASH')
+            hlinearrowtext(125, 1, savetoflash_i+0.5, label='RAM', color='dimgray')
+            hlinearrowtext(125, savetoflash_i+0.5, 24, label='FLASH', color='dimgray')
 
         plt.grid(True, color='lightgray', alpha=0.4, linewidth=0.5)
+
+        ax2 = ax.twiny()
+        ax2.set_xlim(ax.get_xlim())
+        #print(tot_hidden_units(list_hidden_units).flatten())
+        #ax2.set_xticks(list_hidden_units)
+        ax2.set_xticks(num_hidden_layers)
+        ax2.set_xticklabels(num_hidden_units, rotation=45)
+        ax2.set_xlabel("Total number of hidden units")
 
         fig.tight_layout()
         #plt.show()
@@ -235,30 +270,44 @@ if __name__=='__main__':
 
         ax.legend()
         ax.set_xlabel("Number of hidden layers")
-        ax.set_ylabel("Speedup")
-        plt.title("Speedup")
+        ax.set_ylabel("Speedup", fontsize=12)
+        #plt.title("Speedup")
 
         # Draw vertical lines to separate no use dma, use dma layer wise, use dma
         # neuron wise
         if use_dma_i != 0:
             ax.axvline(x=use_dma_i+0.5, color="k", ls='--', linewidth=0.8)
-            hlinearrowtext(5.75, 1, use_dma_i+0.5, label='L1', head_width=0.1)
-            hlinearrowtext(5.75, use_dma_i+0.5, 24, label='L2', head_width=0.1)
+            hlinearrowtext(8.5, 1, use_dma_i+0.5, label='L1', head_width=0.1, color='dimgray')
+            hlinearrowtext(8.5, use_dma_i+0.5, 24, label='L2', head_width=0.1, color='dimgray')
         if neuron_wise_i !=0:
             ax.axvline(x=neuron_wise_i+0.5, color="k", ls=(0, (1, 1)), linewidth=0.8)
-            hlinearrowtext(5, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', head_width=0.1)
-            hlinearrowtext(4.25, neuron_wise_i+0.5, 24, label='neuron-wise', head_width=0.1)
+            hlinearrowtext(7.5, use_dma_i+0.5, neuron_wise_i+0.5, label='layer-wise', head_width=0.1, color='dimgray')
+            hlinearrowtext(7.5, neuron_wise_i+0.5, 24, label='neuron-wise', head_width=0.1, color='dimgray')
+        if use_shared_L2_i !=0:
+            ax.axvline(x=use_shared_L2_i+0.5, color="k", ls=(0, (1, 10)), linewidth=0.8)
+            hlinearrowtext(5.5, 1, use_shared_L2_i+0.5, label='private L2', head_width=0.1, color='dimgray')
+            hlinearrowtext(5.5, use_shared_L2_i+0.5, 24, label='shared L2', head_width=0.1, color='dimgray')
         if savetoflash_i != 0:
             ax.axvline(x=savetoflash_i+0.5, color="k", ls="-.", linewidth=0.8)
-            hlinearrowtext(3, 1, savetoflash_i+0.5, label='RAM', head_width=0.1)
-            hlinearrowtext(3, savetoflash_i+0.5, 24, label='FLASH', head_width=0.1)
+            hlinearrowtext(3, 1, savetoflash_i+0.5, label='RAM', head_width=0.1, color='dimgray')
+            hlinearrowtext(3, savetoflash_i+0.5, 24, label='FLASH', head_width=0.1, color='dimgray')
 
         plt.grid(True, color='lightgray', alpha=0.4, linewidth=0.5)
+
+        ax2 = ax.twiny()
+        ax2.set_xlim(ax.get_xlim())
+        #print(tot_hidden_units(list_hidden_units).flatten())
+        #ax2.set_xticks(list_hidden_units)
+        ax2.set_xticks(num_hidden_layers)
+        ax2.set_xticklabels(num_hidden_units, rotation=45)
+        ax2.set_xlabel("Total number of hidden units")
 
         fig.tight_layout()
         #plt.show()
 
         fig.savefig('./plots/'+fname[:-4]+'_speedup.pdf', bbox_inches='tight')
+
+    #####     ---------------------      Comparison with FLOAT    ---------------------      ######
 
     if args_dict['compare'] == 'armfloat' or args_dict['compare'] == 'both':
 
