@@ -40,8 +40,8 @@ def heatmap(data, row_labels, col_labels, labelsize, ax=None,
     plt.title(fig_title, fontsize=labelsize)
 
     # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.03, pad=0.04, **cbar_kw)
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=labelsize)
+    cbar = ax.figure.colorbar(im, ax=ax, aspect=50, fraction=0.0175, pad=0.11, orientation='horizontal', **cbar_kw)
+    cbar.ax.set_xlabel(cbarlabel, rotation=0, ha='center', va='top', fontsize=labelsize)
     cbar.ax.tick_params(labelsize=labelsize)
     cbar.outline.set_visible(False)
 
@@ -150,7 +150,7 @@ def newline(p1, p2):
     ax.add_line(l)
     return l
 
-def addlines(ax, corners=None, lines=None, y_axis_size=None, color="k"):
+def addlines(ax, corners=None, lines=None, y_axis_size=None, **kwargs):
     # lines = [[(4.5, 5.5), (4.5, 6.5)], [(4.5, 6.5), (5.5, 6.5)], [(5.5, 6.5),
     # (6.5, 6.5)]]
 
@@ -164,7 +164,7 @@ def addlines(ax, corners=None, lines=None, y_axis_size=None, color="k"):
         #lines.append([(blx+1, bly-1), (blx, bly-1)])
         #lines.append([(blx+1, bly-1), (blx+1, bly)])
 
-    lc = mc.LineCollection(lines, color=color, linewidths=1)
+    lc = mc.LineCollection(lines, **kwargs)
     ax.add_collection(lc)
 
 
@@ -196,6 +196,7 @@ if __name__=='__main__':
 
     use_dma = []
     neuron_wise = []
+    use_shared_L2 = []
 
     for core in core_list:
 
@@ -212,6 +213,8 @@ if __name__=='__main__':
                 use_dma.append((n_out-0.5, n_in-0.5))
             if stats["neuron_wise"][i] == 1:
                 neuron_wise.append((n_out-0.5, n_in-0.5))
+            if stats["use_shared_L2"][i] == 1:
+                use_shared_L2.append((n_out-0.5, n_in-0.5))
 
         # Sort the labels
         in_labels = np.sort(np.unique(stats["NUM_INPUT_"+core].to_numpy()))
@@ -240,8 +243,10 @@ if __name__=='__main__':
             im, cbar = heatmap(np.flip(speedup_fc_singleriscy, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="YlGn", cbarlabel="Speedup", xlabel="Output size", ylabel="Input size", fig_title="Speedup of Single-Layer MLP on Single-Ri5cy Core wrt. Single-Ibex Core")
             texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
 
+            # Lines for ibex core private or shared L2
+            addlines(ax, corners=use_shared_L2, y_axis_size=len(in_labels), linewidth=0.8, color="mediumpurple", ls=(0, (1, 1)))
             # Lines to separate use_dma and neuron_wise
-            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), linewidth=0.8, color="dimgray", ls='dashdot')
 
             fig.tight_layout()
             #plt.show()
@@ -258,7 +263,7 @@ if __name__=='__main__':
             texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize)
 
             # Lines to separate use_dma and neuron_wise
-            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), linewidth=0.8, color="dimgray", ls='dashdot')
 
             fig.tight_layout()
             #plt.show()
@@ -278,8 +283,11 @@ if __name__=='__main__':
         im, cbar = heatmap(np.flip(stats_2d/1000, 0), np.flip(in_labels), out_labels, labelsize, ax=ax, cmap="PuBu", cbarlabel="Number of cycles in units of thousands", xlabel="Output size", ylabel="Input size", fig_title="Number of Cycles of Single-Layer MLP on "+title_tmp)
         texts = annotate_heatmap(im, valfmt="{x:.1f}", fontsize=fontsize-1)
 
-        # Lines to separate use_dma and neuron_wise
-        addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), color="dimgray")
+        if core == "fc":
+            addlines(ax, corners=use_shared_L2, y_axis_size=len(in_labels), linewidth=0.8, color="mediumpurple", ls=(0, (1, 1)))
+        else:
+            # Lines to separate use_dma and neuron_wise
+            addlines(ax, corners=neuron_wise, y_axis_size=len(in_labels), linewidth=0.8, color="dimgray", ls='dashdot')
 
         fig.tight_layout()
         #plt.show()
