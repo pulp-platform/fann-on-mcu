@@ -1,0 +1,18 @@
+a-hand_gesture_recognition
+
+#### NUM_INPUT_fc 76
+#### NUM_OUTPUT_fc 10
+#### mean_cycles_fc 1134536
+#### mean_instr_fc 653109
+
+#### NUM_INPUT_singleriscy 76
+#### NUM_OUTPUT_singleriscy 10
+#### mean_cycles_singleriscy 573540
+#### mean_instr_singleriscy 559816
+
+#### NUM_INPUT_multiriscy 76
+#### NUM_OUTPUT_multiriscy 10
+#### mean_cycles_multiriscy 84057
+#### mean_instr_multiriscy 74151
+
+
