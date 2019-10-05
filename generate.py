@@ -329,7 +329,7 @@ try:
     estimated_memory_size = 2*4*int((len(ins)/len(outs))) + (len(fann["generated_neurons"])*(4+4+4+4)) + (len(generatedConnections)*4) + (len(fann["generated_layers"])*2*4) + len(fann["generated_neurons"]) * 4
     print("Estimated memory size whole network {}".format(estimated_memory_size))
     if args_dict['platform'] == 'arm':
-        if estimated_memory_size < 120000:
+        if estimated_memory_size < 90000:
             savetoflash = False
         else:
             savetoflash = True

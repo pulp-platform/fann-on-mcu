@@ -3,6 +3,7 @@ hidden*
 gmon.out
 
 wolfe-onBoardTest-previous-net/
+stm32l475-onDeviceTest-bigger-net/
 
 *.S
 *.s
