@@ -13,7 +13,7 @@ def get_args():
     dict = {}
 
     parser = argparse.ArgumentParser()
-    #parser.add_argument('-i', '--input', help='the name of csv file where to save the measurements')
+    parser.add_argument('-t', '--target', dest='target', default=None, help='folder name of the target application')
     parser.add_argument('-p', '--platform', dest='platform', default='both', choices=['arm','pulp', 'both'], help='Select the mcu platform, curretly supported ones are arm and pulp platforms, default is arm')
     parser.add_argument('--activation', dest='activ', default=True, action='store_true', help='Only for performance measurement purpose. It sets the ACTIVATIONS.')
     parser.add_argument('--no-activation', dest='activ', action='store_false', help='Only for performance measurement purpose. It ignores the ACTIVATIONS, i.e. no activation functions will be applied.')
@@ -22,11 +22,6 @@ def get_args():
     parser.add_argument('-no', '--n_output', dest='n_output', type=int, nargs=1, help='Number of output classes')
     args = parser.parse_args()
 
-    #if args.input == None:
-    #    parser.error("Missing input filename to save the data. --help for more details.")
-    #else:
-    #    dict['fname'] = args.input
-    
     dict['activ'] = args.activ
 
     dict['platform'] = args.platform
@@ -34,6 +29,8 @@ def get_args():
     dict['n_input'] = args.n_input
     dict['hidden'] = args.hidden
     dict['n_output'] = args.n_output
+
+    dict['target'] = args.target
 
     return dict
 
@@ -254,6 +251,10 @@ if __name__ == '__main__':
         # 3-human_activity_classification fpga paper).
         only_sigmoid_stepwise("./output/fann.c")
         os.system("mv -f ./output/* -t ./applications/output/arm")
+        # copy to the target application folder if given
+        if args_dict['target'] != None:
+            os.system("cp -f ./applications/output/arm/*.c -t ./applications/"+args_dict['target']+"/stm32/Src")
+            os.system("cp -f ./applications/output/arm/*.h -t ./applications/"+args_dict['target']+ "/stm32/Inc")
 
 
     if platform == 'pulp' or platform == 'both':
@@ -271,6 +272,9 @@ if __name__ == '__main__':
         # 3-human_activity_classification fpga paper).
         only_sigmoid_stepwise("./output/fann.c")
         os.system("mv -f ./output/* -t ./applications/output/pulp/fc/")
+        # copy to the target application folder if given
+        if args_dict['target'] != None:
+            os.system("cp -f ./applications/output/pulp/fc/* -t ./applications/"+args_dict['target']+"/wolfe/fc")
 
         # run on cluster single core
         #print("#### run on singleriscy");
@@ -282,6 +286,9 @@ if __name__ == '__main__':
             os.system("python3 generate.py -i ./applications/perftest_fixed -p pulp -c single -dm cluster --no-activation")
         only_sigmoid_stepwise("./output/fann.c")
         os.system("mv -f ./output/* -t ./applications/output/pulp/cluster/singlecore/")
+        # copy to the target application folder if given
+        if args_dict['target'] != None:
+            os.system("cp -f ./applications/output/pulp/cluster/singlecore/* -t ./applications/"+args_dict['target']+"/wolfe/cluster/singlecore")
 
         # run on cluster parallel
         #print("#### run on multiriscy");
@@ -297,6 +304,9 @@ if __name__ == '__main__':
             os.system("python3 generate.py -i ./applications/perftest_fixed -p pulp -c parallel --no-activation")
         only_sigmoid_stepwise("./output/fann.c")
         os.system("mv -f ./output/* -t ./applications/output/pulp/cluster/multicore/")
+        # copy to the target application folder if given
+        if args_dict['target'] != None:
+            os.system("cp -f ./applications/output/pulp/cluster/multicore/* -t ./applications/"+args_dict['target']+"/wolfe/cluster/multicore")
 
 
 

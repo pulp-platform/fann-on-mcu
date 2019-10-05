@@ -1,0 +1,135 @@
+Notes:
+
+Mr. Wolf.
+Connected 1.8V to VAVD orange pin and black pin.
+Connected 1.8V to VIO orange pin and black pin.
+
+Unit of current is mA
+Unit of time is ms
+
+Stm32l475vg 3.3V
+
+80MHz: 10.12mA
+100MHz: 10.14mA
+
+* Pulp voltage switch to 1.8V
+
+After resetting, running nothing: 4.42mA (7.956mW) VAVD, 3.34mA (6.012mW) VIO
+(while resetting both to ~14mA)
+
+** a-hand_gesture_recognition
+
+76 -> 300 -> 200 -> 100 -> 10, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 1134536
+#### min_current_fc 6.97
+#### mean_current_fc 7.35
+#### max_current_fc 7.81
+#### delta_t_fc 11.1
+
+*** Singleriscy
+#### mean_cycles_singleriscy 573540
+#### min_current_singleriscy 4.65
+#### mean_current_singleriscy 11.09
+#### max_current_singleriscy 12.75
+#### delta_t_singleriscy 7.2
+
+*** Multiriscy
+#### mean_cycles_multiriscy 84057
+#### min_current_multiriscy 4.64
+#### mean_current_multiriscy 15.05
+#### max_current_multiriscy 34.37
+#### delta_t_multiriscy 3.2
+
+*** Arm - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 1062023
+#### min_current_arm 21.24
+#### mean_current_arm 22.12
+#### max_current_arm 22.99
+#### delta_t_arm 3.1
+
+
+
+** b-fall_detection-bigger_net
+
+76 -> 300 -> 200 -> 100 -> 10, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 28604
+#### min_current_fc 4.43
+#### mean_current_fc 6.71
+#### max_current_fc 7.01
+#### delta_t_fc 0.307
+
+*** Singleriscy
+#### mean_cycles_singleriscy 13506
+#### min_current_singleriscy 4.63
+#### mean_current_singleriscy 9.23
+#### max_current_singleriscy 11.42
+#### delta_t_singleriscy 2.0
+
+*** Multiriscy
+#### mean_cycles_multiriscy 2701
+#### min_current_multiriscy 5.03
+#### mean_current_multiriscy 9.29
+#### max_current_multiriscy 25.20
+#### delta_t_multiriscy 1.9
+
+*** Arm - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 19498
+#### min_current_arm 21.34
+#### mean_current_arm 23.24
+#### max_current_arm 23.74
+#### delta_t_arm 0.266
+
+
+** c-human_activity_classification
+
+7 -> 6 -> 5, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 1828
+#### min_current_fc 4.28
+#### mean_current_fc 5.60
+#### max_current_fc 6.82
+#### delta_t_fc 0.041
+
+*** Singleriscy
+#### mean_cycles_singleriscy 1132
+#### min_current_singleriscy 5.14
+#### mean_current_singleriscy 8.10
+#### max_current_singleriscy 10.95
+#### delta_t_singleriscy 1.2
+
+*** Multiriscy
+#### mean_cycles_multiriscy 456
+#### min_current_multiriscy 5.01
+#### mean_current_multiriscy 8.13
+#### max_current_multiriscy 11.47
+#### delta_t_multiriscy 1.2
+
+*** Arm - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 1477
+#### min_current_arm 21.54
+#### mean_current_arm 21.73
+#### max_current_arm 22.15
+#### delta_t_arm 0.041
+
+
+* Pulp voltage switch to 3.3V -- IGNORE THIS
+
+After resetting, running nothing: 2.46mA (4.428mW) VAVD, 5.29mA (9.522mW) VIO
+(while resetting VAVD 1.21mA, VIO 28.08mA)
+
+** a-hand_gesture_recognition
+
+76 -> 300 -> 200 -> 100 -> 10, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 1134536
+#### min_current_fc 2.52
+#### mean_current_fc 5.50
+#### max_current_fc 5.98
+#### delta_t_fc 11.2
+

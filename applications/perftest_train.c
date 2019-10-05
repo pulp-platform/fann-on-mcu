@@ -37,14 +37,12 @@ int main (int argc)
 	printf("random number %d\n", rand());
 
 	fann_type *calc_out;
-	const unsigned int num_input = 76;
-	const unsigned int num_output = 10;
+	const unsigned int num_input = 7;
+	const unsigned int num_output = 5;
 
 	// num_layers = 1 hidden layer + 1 output layer
-	const unsigned int num_layers = 5;
-	const unsigned int num_neurons_hidden0 = 300;
-	const unsigned int num_neurons_hidden1 = 200;
-	const unsigned int num_neurons_hidden2 = 100;
+	const unsigned int num_layers = 3;
+	const unsigned int num_neurons_hidden0 = 6;
 	const float desired_error = (const float) 0;
 	const unsigned int max_epochs = 1450;
 	const unsigned int epochs_between_reports = 10;
@@ -55,7 +53,7 @@ int main (int argc)
 	unsigned int decimal_point;
 
 	printf("Creating network.\n");
-	ann = fann_create_standard(num_layers, num_input, num_neurons_hidden0, num_neurons_hidden1, num_neurons_hidden2, num_output);
+	ann = fann_create_standard(num_layers, num_input, num_neurons_hidden0, num_output);
 	data = fann_read_train_from_file("./generated_data/perftest.train");
 
 	fann_set_activation_steepness_hidden(ann, 1);
