@@ -57,7 +57,7 @@ fann_type *fann_run(fann_type * input)
 				//recompute activation approximation, if different from prov. layer
             if(activation_function != last_activation_function || steepness != last_steepness)
             {
-		fann_type inv_steepness = 1/steepness;
+		 
                 switch (activation_function)
                 {
                     case FANN_SIGMOID:
@@ -68,12 +68,12 @@ fann_type *fann_run(fann_type * input)
                         r4 = SIGMOID_RESULTS_3;
                         r5 = SIGMOID_RESULTS_4;
                         r6 = SIGMOID_RESULTS_5;
-                        v1 = SIGMOID_SYMMETRIC_RESULTS_0 * inv_steepness;
-                        v2 = SIGMOID_SYMMETRIC_RESULTS_1 * inv_steepness;
-                        v3 = SIGMOID_SYMMETRIC_RESULTS_2 * inv_steepness;
-                        v4 = SIGMOID_SYMMETRIC_RESULTS_3 * inv_steepness;
-                        v5 = SIGMOID_SYMMETRIC_RESULTS_4 * inv_steepness;
-                        v6 = SIGMOID_SYMMETRIC_RESULTS_5 * inv_steepness;
+                        v1 = SIGMOID_SYMMETRIC_RESULTS_0 / steepness;
+                        v2 = SIGMOID_SYMMETRIC_RESULTS_1 / steepness;
+                        v3 = SIGMOID_SYMMETRIC_RESULTS_2 / steepness;
+                        v4 = SIGMOID_SYMMETRIC_RESULTS_3 / steepness;
+                        v5 = SIGMOID_SYMMETRIC_RESULTS_4 / steepness;
+                        v6 = SIGMOID_SYMMETRIC_RESULTS_5 / steepness;
                         break;
                     case FANN_SIGMOID_SYMMETRIC:
                     case FANN_SIGMOID_SYMMETRIC_STEPWISE:
@@ -83,12 +83,12 @@ fann_type *fann_run(fann_type * input)
                         r4 = SIGMOID_SYMMETRIC_RESULTS_3;
                         r5 = SIGMOID_SYMMETRIC_RESULTS_4;
                         r6 = SIGMOID_SYMMETRIC_RESULTS_5;
-                        v1 = SIGMOID_SYMMETRIC_VALUES_0 * inv_steepness;
-                        v2 = SIGMOID_SYMMETRIC_VALUES_1 * inv_steepness;
-                        v3 = SIGMOID_SYMMETRIC_VALUES_2 * inv_steepness;
-                        v4 = SIGMOID_SYMMETRIC_VALUES_3 * inv_steepness;
-                        v5 = SIGMOID_SYMMETRIC_VALUES_4 * inv_steepness;
-                        v6 = SIGMOID_SYMMETRIC_VALUES_5 * inv_steepness;
+                        v1 = SIGMOID_SYMMETRIC_VALUES_0 / steepness;
+                        v2 = SIGMOID_SYMMETRIC_VALUES_1 / steepness;
+                        v3 = SIGMOID_SYMMETRIC_VALUES_2 / steepness;
+                        v4 = SIGMOID_SYMMETRIC_VALUES_3 / steepness;
+                        v5 = SIGMOID_SYMMETRIC_VALUES_4 / steepness;
+                        v6 = SIGMOID_SYMMETRIC_VALUES_5 / steepness;
                         break;
                     case FANN_THRESHOLD:
                         break;

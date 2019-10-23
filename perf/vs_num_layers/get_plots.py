@@ -123,18 +123,18 @@ if __name__=='__main__':
 
     fig, ax = plt.subplots()
 
-    #ax.plot(num_hidden_layers[:use_dma_i], mean_cycles_fc[:use_dma_i]/1000, "^", mfc="darkorange", mec="darkorange", label="Single-Ibex Core, no dma")
-    #ax.plot(num_hidden_layers[use_dma_i:neuron_wise_i], mean_cycles_fc[use_dma_i:neuron_wise_i]/1000, "b^", label="Single-Ibex Core, layer-wise dma")
+    #ax.plot(num_hidden_layers[:use_dma_i], mean_cycles_fc[:use_dma_i]/1000, "^", mfc="darkorange", mec="darkorange", label="Single-IBEX Core, no dma")
+    #ax.plot(num_hidden_layers[use_dma_i:neuron_wise_i], mean_cycles_fc[use_dma_i:neuron_wise_i]/1000, "b^", label="Single-IBEX Core, layer-wise dma")
     #ax.plot(num_hidden_layers[neuron_wise_i:],
-    #mean_cycles_fc[neuron_wise_i:]/1000, "g^", label="Single-Ibex Core,
+    #mean_cycles_fc[neuron_wise_i:]/1000, "g^", label="Single-IBEX Core,
     #neuron-wise dma")
-    ax.plot(num_hidden_layers, mean_cycles_fc/1000, "^", label="Single-Ibex Core")
-    ax.plot(num_hidden_layers, mean_cycles_singleriscy/1000, "s", label="Single-Ri5cy Core")
-    ax.plot(num_hidden_layers, mean_cycles_multiriscy/1000, "o", label="Multi-Ri5cy Cores")
+    ax.plot(num_hidden_layers, mean_cycles_fc/1000, "^", label="Single-IBEX Core")
+    ax.plot(num_hidden_layers, mean_cycles_singleriscy/1000, "s", label="Single-RI5CY Core")
+    ax.plot(num_hidden_layers, mean_cycles_multiriscy/1000, "o", label="Multi-RI5CY Cores")
 
     ax.set_xticks(num_hidden_layers)#range(1, len(num_hidden_layers)+1))
 
-    #legend_elements = [Line2D([0], [0], marker="^", label='Single-Ibex Core'), Line2D([0], [0], marker='s', label='Single-Ri5cy Core'), Line2D([0], [0], marker='o', label='Multi-Ri5cy Core'), Patch(facecolor='orange', label='Color Patch')]
+    #legend_elements = [Line2D([0], [0], marker="^", label='Single-IBEX Core'), Line2D([0], [0], marker='s', label='Single-RI5CY Core'), Line2D([0], [0], marker='o', label='Multi-RI5CY Core'), Patch(facecolor='orange', label='Color Patch')]
 
     ax.legend()
     ax.set_xlabel("Number of hidden layers")
@@ -193,8 +193,8 @@ if __name__=='__main__':
 
     fig, ax = plt.subplots()
 
-    ax.plot(num_hidden_layers, mean_cycles_fc/mean_cycles_singleriscy, "s", label="Single-Ri5cy/Single-Ibex")
-    ax.plot(num_hidden_layers, mean_cycles_singleriscy/mean_cycles_multiriscy, "o", label="Multi-Ri5cy/Single-Ri5cy")
+    ax.plot(num_hidden_layers, mean_cycles_fc/mean_cycles_singleriscy, "s", label="Single-RI5CY/Single-IBEX")
+    ax.plot(num_hidden_layers, mean_cycles_singleriscy/mean_cycles_multiriscy, "o", label="Multi-RI5CY/Single-RI5CY")
 
     #print(mean_cycles_fc/mean_cycles_singleriscy)
     #print(mean_cycles_singleriscy/mean_cycles_multiriscy)

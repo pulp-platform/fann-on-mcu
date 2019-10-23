@@ -6,13 +6,14 @@ Connected 1.8V to VIO orange pin and black pin.
 
 Unit of current is mA
 Unit of time is ms
+Unit of energy mJ
 
 Stm32l475vg 3.3V
 
 80MHz: 10.12mA
 100MHz: 10.14mA
 
-* Pulp voltage switch to 1.8V
+* Pulp voltage switch to 1.8V -- MY BOARD, 1.1V instead! -- IGNORE THIS
 
 After resetting, running nothing: 4.42mA (7.956mW) VAVD, 3.34mA (6.012mW) VIO
 (while resetting both to ~14mA)
@@ -53,7 +54,7 @@ After resetting, running nothing: 4.42mA (7.956mW) VAVD, 3.34mA (6.012mW) VIO
 
 ** b-fall_detection-bigger_net
 
-76 -> 300 -> 200 -> 100 -> 10, sigmoidal activations
+117 -> 20 -> 2, sigmoidal activations
 
 *** FC
 #### mean_cycles_fc 28604
@@ -133,3 +134,147 @@ After resetting, running nothing: 2.46mA (4.428mW) VAVD, 5.29mA (9.522mW) VIO
 #### max_current_fc 5.98
 #### delta_t_fc 11.2
 
+
+
+* Pulp voltage switch to 1.8V -- PHILIPP'S BOARD, use these numbers
+
+Power off then on, running nothing: 2.05mA (3.69mW) VAVD
+(while resetting  ~0.11mA)
+
+** a-hand_gesture_recognition
+
+76 -> 300 -> 200 -> 100 -> 10, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 1134536
+#### min_current_fc 2.96
+#### mean_current_fc 5.97
+#### max_current_fc 6.66
+#### delta_t_fc 11.4
+#### energy_fc 135.951
+
+*** Singleriscy
+#### mean_cycles_singleriscy 573540 - DA 627389
+#### min_current_singleriscy 2.95 - DA 2.67
+#### mean_current_singleriscy 9.98 - DA 10.47
+#### max_current_singleriscy 11.72 - DA 12.33
+#### delta_t_singleriscy 7.2 - DA 6.9ms
+#### energy_singleriscy 90.858
+#### activate_cluster 0.84 - 130966 cycles = 1.31ms
+#### transfer_input_data 0.36 - 258 cycles = 2.5us
+#### tot_cluster_dma 134011 cycles = 1.34ms
+
+*** Multiriscy
+#### mean_cycles_multiriscy 84057 - DA 85319
+#### min_current_multiriscy 3.00 - DA 3.18
+#### mean_current_multiriscy 14.41 - DA 18.63
+#### max_current_multiriscy 42.04 - DA 44.94
+#### delta_t_multiriscy 3.2 - DA 2.0ms
+#### energy_multiriscy 26.386
+#### activate_cluster 0.98 - 130992 = 1.31ms
+#### transfer_input_data 1.2 - 258 cycles = 2.5us
+
+*** Arm stm32 - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 1062023
+#### min_current_arm 21.24
+#### mean_current_arm 22.12
+#### max_current_arm 22.99
+#### delta_t_arm 3.1
+
+*** Arm nordic - 1.8V - freq. 65536Hz - DCDC enabled
+#### mean_cycles_arm 1127514
+#### min_current_arm 2.74
+#### mean_current_arm 5.80
+#### max_current_arm 7.64
+#### delta_t_arm 17.6
+#### energy_arm 159.866
+
+
+** b-fall_detection-bigger_net
+
+117 -> 20 -> 2, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 28604
+#### min_current_fc 2.72
+#### mean_current_fc 5.29
+#### max_current_fc 5.98
+#### delta_t_fc 0.317 - 0.286
+#### energy_fc 0.086 - 0.0028
+
+*** Singleriscy
+#### mean_cycles_singleriscy 13506 - DA 14416
+#### min_current_singleriscy 2.77 -DA 3.13
+#### mean_current_singleriscy 7.94 - DA 7.06
+#### max_current_singleriscy 10.35- DA 13.86
+#### delta_t_singleriscy 2.0 - DA 1.3
+#### energy_singleriscy 5.617
+
+*** Multiriscy
+#### mean_cycles_multiriscy 2701 - DA 3298
+#### min_current_multiriscy 2.72 - DA 3.05
+#### mean_current_multiriscy 7.99- DA 7.08
+#### max_current_multiriscy 25.10 - DA 25.86
+#### delta_t_multiriscy 1.9 - DA 1.2
+#### energy_multiriscy 5.107
+
+*** Arm - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 19498
+#### min_current_arm 21.34
+#### mean_current_arm 23.24
+#### max_current_arm 23.74
+#### delta_t_arm 0.266
+
+*** Arm nordic - 1.8V - freq. 65536Hz - DCDC enabled
+#### mean_cycles_arm 28077
+#### min_current_arm 4.09
+#### mean_current_arm 6.23
+#### max_current_arm 7.6
+#### delta_t_arm 0.399 - 0.439
+#### energy_arm 0.184 - 0.0049
+
+
+** c-human_activity_classification
+
+7 -> 6 -> 5, sigmoidal activations
+
+*** FC
+#### mean_cycles_fc 1828
+#### min_current_fc 2.90
+#### mean_current_fc 4.06
+#### max_current_fc 5.67
+#### delta_t_fc 0.041 - 0.018
+#### energy_fc 0.074 - 0.134 uJ
+
+*** Singleriscy
+#### mean_cycles_singleriscy 1132
+#### min_current_singleriscy 2.95
+#### mean_current_singleriscy 6.62
+#### max_current_singleriscy 10.20
+#### delta_t_singleriscy 1.2
+#### energy_singleriscy 1.623
+
+*** Multiriscy
+#### mean_cycles_multiriscy 456
+#### min_current_multiriscy 2.92
+#### mean_current_multiriscy 6.63
+#### max_current_multiriscy 11.37
+#### delta_t_multiriscy 1.2
+#### energy_multiriscy 1.624
+#### activate_cluster 0.94
+#### transfer_input_data 0.06
+
+*** Arm - 3.3V - check the frequency SystemClock_Config
+#### mean_cycles_arm 1477
+#### min_current_arm 21.54
+#### mean_current_arm 21.73
+#### max_current_arm 22.15
+#### delta_t_arm 0.041
+
+*** Arm nordic - 1.8V - freq. 65536Hz - DCDC enabled
+#### mean_cycles_arm 2026
+#### min_current_arm 4.24
+#### mean_current_arm 5.41
+#### max_current_arm 6.63
+#### delta_t_arm 0.051 - 0.032
+#### energy_arm 0.003 - 0.308 uJ

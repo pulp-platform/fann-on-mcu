@@ -9,8 +9,8 @@
 #define PERF_COUNTER
 
 // for taking measurements on board
-#define NUM_REPEAT 1003
-#define WARM_CACHE 3
+#define NUM_REPEAT 5
+#define WARM_CACHE 2
 
 RT_CL_DATA fann_type local_data_buffer[2][NUM_INPUT];
 int buff_index = 0;

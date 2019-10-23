@@ -7,8 +7,8 @@
 #include <rt/rt_api.h>
 
 // for taking measurements on board
-#define NUM_REPEAT 1003
-#define WARM_CACHE 3
+#define NUM_REPEAT 5
+#define WARM_CACHE 2
 
 int main(int argc, char *argv[])
 {
