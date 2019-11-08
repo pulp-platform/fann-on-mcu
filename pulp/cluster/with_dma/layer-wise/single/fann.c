@@ -9,12 +9,15 @@
 #include "rt/rt_api.h"
 #include "plp_math.h"
 
+RT_CL_DATA static int buff_index_weights = 0;
+RT_CL_DATA static int buff_index_neuron_values = 0;
 
 fann_type *fann_run(fann_type * input)
 {
   fann_type *neurons, neuron_sum, steepness;
-  fann_type *weights;
-  unsigned int num_connections, activation_function, layer_it, neuron_it, last_neuron, first_neuron;
+  fann_type *weights; // address for single neuron (in dot prod)
+  fann_type *weights_offset; // offset in one layer
+  unsigned int num_connections, activation_function, layer_it, neuron_it, last_neuron, first_neuron, first_connection;
 
 #ifdef FIXEDFANN
   /* values used for the stepwise linear sigmoid function */
@@ -29,10 +32,10 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-  //plp_fill_i32s_xpulpv2(MULTIPLIER, neuron_values, NUM_NEURONS);
-  // Comment: not necessary, it's appended later, see below: append bias
+  //plp_fill_i32(MULTIPLIER, neuron_values, NUM_NEURONS);
+  // ADD THE MULTIPLIER AFTER THE LAST ELEMENT OF neuron_values FOR EACH LAYER (SEE BELOW)
 
-  plp_copy_i32s_xpulpv2(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
+  plp_copy_i32s_xpulpv2(input, neuron_values[buff_index_neuron_values], NUM_INPUT);
 
 #else
 
@@ -41,11 +44,41 @@ fann_type *fann_run(fann_type * input)
 
 #endif
 
+  // Transfer the weights of the first layer
+  rt_dma_copy_t id_in_weights;
+  int datasize = sizeof(fann_type);
+  int num_weights = (NUM_INPUT+1)*(fann_layers[1].last_neuron-fann_layers[1].first_neuron-1);
+
+  // weights_offset = where in the weights array to start transfering
+  weights_offset = fann_weights;
+
+  // Prologue for the loop, we need to fetch one buffer
+  rt_dma_memcpy((int)weights_offset, (int)weights_loc_buff[buff_index_weights], num_weights*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in_weights);
+  buff_index_weights ^= 1;
+
   //for all layers
   for(layer_it = 1; layer_it != NUM_LAYERS; ++layer_it) {
-    //for all neurons in that layer
+
     last_neuron = fann_layers[layer_it].last_neuron -1; // last_neuron -1 because the last neuron is anyways the bias which is counted already in neuron_values with MULTIPLIER (see above)
     first_neuron = fann_layers[layer_it].first_neuron;
+    first_connection = fann_neurons[first_neuron].first_connection;
+
+    num_connections = fann_neurons[first_neuron].last_connection - first_connection;
+    // We assume that all the neurons in the same layer have the same number of connections, i.e. fully connected networks.
+
+    num_weights = fann_neurons[last_neuron].last_connection - first_connection;
+    // Comment: fann_neurons[last_neuron].last_connection is equal to fann_neurons[last_neuron].first_connection (it's the bias neuron)
+
+    // Update weights offset
+    weights_offset += num_weights;
+
+    // Wait for previous iteration input transfer. This is supposed to be already finished if processing is long enough
+    rt_dma_wait(&id_in_weights);
+
+    // Enqueue the input buffer transfer for the next iteration so that the DMA transfers it while we do computation
+    rt_dma_memcpy((int)weights_offset, (int)weights_loc_buff[buff_index_weights], num_weights*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in_weights);
+    buff_index_weights ^= 1;
+
 
 #ifdef ACTIVATIONS
 
@@ -59,7 +92,7 @@ fann_type *fann_run(fann_type * input)
     //recompute activation approximation, if different from prov. layer
     if(activation_function != last_activation_function || steepness != last_steepness)
       {
-        
+
         switch (activation_function)
           {
           case FANN_SIGMOID:
@@ -104,42 +137,40 @@ fann_type *fann_run(fann_type * input)
 
 #endif // ACTIVATIONS
 
-    if(CONNECTION_RATE >= 1) { // CONNECTION_RATE
-        if(network_type == FANN_NETTYPE_SHORTCUT) {
-          neurons = neuron_values;
-        } else {
-          neurons = neuron_values + fann_layers[layer_it - 1].first_neuron;
-        } // FANN_NETTYPE_SHORTCUT
+    weights = weights_loc_buff[buff_index_weights];
 
-    } else{
-        // not supported yet...
-    }
+    // Append bias (MULTIPLIER)
+    neuron_values[buff_index_neuron_values][num_connections-1] = MULTIPLIER;
 
-    for(neuron_it = first_neuron; neuron_it < last_neuron; ++neuron_it) { // last_neuron -1 because the last neuron is anyways the bias which is counted already in neuron_values with MULTIPLIER (see above)
-          
-      num_connections = fann_neurons[neuron_it].last_connection - fann_neurons[neuron_it].first_connection;
-      if(num_connections == 0){
-        continue; // fast-forward if no connections
-      }
+    //for all neurons in that layer
+    for(neuron_it = 0; neuron_it < last_neuron-first_neuron; ++neuron_it) { // last_neuron -1 because the last neuron is anyways the bias which is counted already in neuron_values with MULTIPLIER (see above)
+
+      // With dma transfers we also assume that all the neurons in the same layer have the same number of connections, i.e. fully-connected layers
+      //num_connections = fann_neurons[neuron_it].last_connection - fann_neurons[neuron_it].first_connection;
+      //if(num_connections == 0){
+      //  continue; // fast-forward if no connections
+      //}
 
       //get neuron properties & init vars
-            
-      weights = fann_weights + fann_neurons[neuron_it].first_connection;
       neuron_sum = 0;
 
+      // append bias to neuron_values
       if(CONNECTION_RATE >= 1) {
 
-        // Append bias (MULTIPLIER)
-        neurons[num_connections-1] = MULTIPLIER;
 
 #ifdef FIXEDFANN
 
-        plp_dot_prod_q32s_xpulpv2((fann_type *)weights, neurons, num_connections, DECIMAL_POINT, &neuron_sum);
+        plp_dot_prod_q32s_xpulpv2((fann_type *)weights, neuron_values[buff_index_neuron_values], num_connections, DECIMAL_POINT, &neuron_sum);
+
+        buff_index_neuron_values ^= 1;
 
 #else
         printf("floating point not supported yet for pulp\n");
         return 0;
 #endif
+
+        weights = weights + num_connections;
+
       } else {
         // Not supported yet... (connection rate < 1?)
       }
@@ -147,8 +178,8 @@ fann_type *fann_run(fann_type * input)
 #ifdef ACTIVATIONS
 
 #ifdef FIXEDFANN
-    
-            
+
+      // COMMENT: there is an external load access
       //apply activation function
       switch (activation_function) {
       case FANN_SIGMOID:
@@ -188,8 +219,9 @@ fann_type *fann_run(fann_type * input)
         while(1) {} // not supported...
         break;
       }
-            
-      neuron_values[neuron_it] = neuron_sum;
+
+      neuron_values[buff_index_neuron_values][neuron_it] = neuron_sum;
+      buff_index_neuron_values ^= 1;
 #else // FIXEDFANN
       neuron_sum = fann_mult(steepness, neuron_sum);
       max_sum = 150.0f / steepness;
@@ -203,8 +235,15 @@ fann_type *fann_run(fann_type * input)
 
 #endif // ACTIVATIONS
     }
+
+#ifdef FIXEDFANN
+    // Readjust index
+    buff_index_neuron_values ^= 1;
+#endif
+
   }
-    
+
+  rt_dma_wait(&id_in_weights);
   // return pointer to output values
-  return neuron_values + fann_layers[NUM_LAYERS - 1].first_neuron;
+  return neuron_values[buff_index_neuron_values];
 }

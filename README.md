@@ -1,4 +1,4 @@
-Copyright (c) 2018 ETH Zurich, Lukas Cavigelli, Xiaying Wang, Ferdinand von Hagen, Philipp Mayer, Michele Magno
+Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
 
 # FANN-on-MCU: Optimized FANN Inference for Microcontrollers
 

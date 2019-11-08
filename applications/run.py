@@ -164,6 +164,7 @@ def only_sigmoid_stepwise(orig_file=None):
                 f.write('}\n\n' + line)
                 start_delete = 0
             elif line_split[0][0:13] == 'neuron_values':
+		f.write(line)
                 #print("HEEEEERE", line_split[0][0:13])
                 start_delete = 0
             elif start_delete == 0 or start_found2 == 1:

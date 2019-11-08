@@ -1,4 +1,4 @@
-//Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli, Xiaying Wang
+//Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
 
 #include <stdio.h>
 #include "fann_conf.h"
@@ -7,10 +7,7 @@
 #include "fann_net.h"
 
 #include "rt/rt_api.h"
-//#include <pulp.h>
 #include "plp_math.h"
-
-//#define ACTIVATIONS
 
 
 fann_type *fann_run(fann_type * input)
@@ -32,27 +29,7 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-  //plp_fill_i32(MULTIPLIER, neuron_values, NUM_NEURONS);
-  // Comment: not necessary, it's appended later, see below: append bias
-
-
-  /*
-    rt_perf_t perf;
-    rt_perf_init(&perf);
-    rt_perf_conf(&perf, (1<<RT_PERF_CYCLES) | (1<<RT_PERF_INSTR));
-    rt_perf_reset(&perf);
-    rt_perf_start(&perf);
-  */
   plp_copy_i32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
-
-
-  /*
-    rt_perf_stop(&perf);
-
-
-    printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
-    printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
-  */
 
 #else
 
@@ -90,12 +67,12 @@ fann_type *fann_run(fann_type * input)
             r4 = SIGMOID_RESULTS_3;
             r5 = SIGMOID_RESULTS_4;
             r6 = SIGMOID_RESULTS_5;
-            v1 = SIGMOID_SYMMETRIC_RESULTS_0 / steepness;
-            v2 = SIGMOID_SYMMETRIC_RESULTS_1 / steepness;
-            v3 = SIGMOID_SYMMETRIC_RESULTS_2 / steepness;
-            v4 = SIGMOID_SYMMETRIC_RESULTS_3 / steepness;
-            v5 = SIGMOID_SYMMETRIC_RESULTS_4 / steepness;
-            v6 = SIGMOID_SYMMETRIC_RESULTS_5 / steepness;
+            v1 = SIGMOID_VALUES_0 / steepness;
+            v2 = SIGMOID_VALUES_1 / steepness;
+            v3 = SIGMOID_VALUES_2 / steepness;
+            v4 = SIGMOID_VALUES_3 / steepness;
+            v5 = SIGMOID_VALUES_4 / steepness;
+            v6 = SIGMOID_VALUES_5 / steepness;
             break;
           case FANN_SIGMOID_SYMMETRIC:
           case FANN_SIGMOID_SYMMETRIC_STEPWISE:
@@ -152,37 +129,10 @@ fann_type *fann_run(fann_type * input)
         // Append bias (MULTIPLIER)
         neurons[num_connections-1] = MULTIPLIER;
 
-        /*
-          for(int i=0; i<num_connections; i++){
-
-          printf("%d\n", neurons[i]);
-
-          }
-        */
 
 #ifdef FIXEDFANN
 
-        /*
-          rt_perf_t perf;
-          rt_perf_init(&perf);
-          rt_perf_conf(&perf, (1<<RT_PERF_CYCLES) | (1<<RT_PERF_INSTR));
-          rt_perf_reset(&perf);
-          rt_perf_start(&perf);
-        */
-        //plp_dot_prod_fixed32_accum32((fann_type *)weights, neurons, num_connections, &neuron_sum);
         plp_dot_prod_q32((fann_type *)weights, neurons, num_connections, DECIMAL_POINT, &neuron_sum);
-
-        //printf("%d\n", neurons[0]);
-
-
-        //neuron_sum = neuron_sum >> DECIMAL_POINT;
-        /*
-          rt_perf_stop(&perf);
-
-
-          printf("Total cycles: %d\n", rt_perf_read(RT_PERF_CYCLES));
-          printf("Instructions: %d\n", rt_perf_read(RT_PERF_INSTR));
-        */
 
 #else
         printf("floating point not supported yet for pulp\n");

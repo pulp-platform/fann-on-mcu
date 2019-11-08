@@ -1,4 +1,5 @@
-//Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli
+//Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
+
 #include "fann.h"
 
 #ifndef FANN_FANN_STRUCTS_H_

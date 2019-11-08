@@ -1,0 +1,22 @@
+{
+    "_comment": "write the memory in Bytes. Percentage (default is 0.8) of the memory will be considered as maximum size for the networks",
+    "arm":
+    {
+        "ram": 128000,
+        "flash": 1000000
+    },
+    "pulp":
+    {
+        "fc":
+        {
+            "l1": 32000,
+            "l2": 512000
+        },
+        "cluster":
+        {
+            "l1": 64000,
+            "l2": 512000
+        }
+    },
+    "percentage": 0.93
+}

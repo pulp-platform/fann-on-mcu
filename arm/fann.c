@@ -1,4 +1,4 @@
-//Copyright (c) 2018 ETH Zurich, Ferdinand von Hagen, Michele Magno, Lukas Cavigelli, Xiaying Wang
+//Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
 
 #include <stdio.h>
 #include "fann_conf.h"
@@ -67,12 +67,12 @@ fann_type *fann_run(fann_type * input)
                         r4 = SIGMOID_RESULTS_3;
                         r5 = SIGMOID_RESULTS_4;
                         r6 = SIGMOID_RESULTS_5;
-                        v1 = SIGMOID_SYMMETRIC_RESULTS_0 / steepness;
-                        v2 = SIGMOID_SYMMETRIC_RESULTS_1 / steepness;
-                        v3 = SIGMOID_SYMMETRIC_RESULTS_2 / steepness;
-                        v4 = SIGMOID_SYMMETRIC_RESULTS_3 / steepness;
-                        v5 = SIGMOID_SYMMETRIC_RESULTS_4 / steepness;
-                        v6 = SIGMOID_SYMMETRIC_RESULTS_5 / steepness;
+                        v1 = SIGMOID_VALUES_0 / steepness;
+                        v2 = SIGMOID_VALUES_1 / steepness;
+                        v3 = SIGMOID_VALUES_2 / steepness;
+                        v4 = SIGMOID_VALUES_3 / steepness;
+                        v5 = SIGMOID_VALUES_4 / steepness;
+                        v6 = SIGMOID_VALUES_5 / steepness;
                         break;
                     case FANN_SIGMOID_SYMMETRIC:
                     case FANN_SIGMOID_SYMMETRIC_STEPWISE:
