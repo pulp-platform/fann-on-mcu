@@ -1,9 +1,14 @@
 paper/
+docs/
 hidden*
 gmon.out
 
 wolfe-onBoardTest-previous-net/
+stm32l475-onDeviceTest-previous-net/
+stm32l475-onDeviceTest/
 stm32l475-onDeviceTest-bigger-net/
+
+applications/
 
 *.S
 *.s
