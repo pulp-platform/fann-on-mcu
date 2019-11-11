@@ -1,3 +1,5 @@
+gcc_test/
+perf/
 paper/
 docs/
 hidden*
