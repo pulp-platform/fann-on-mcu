@@ -18,13 +18,13 @@ microcontroller are generated.
 
 ### Reference/Attribution
 If this code is helpful for your research, please cite 
-> M. Magno, L. Cavigelli, P. Mayer, F. von Hagen, L. Benini, "FANNCortexM: An Open Source Toolkit for Deployment of Multi-layer Neural Networks on ARM Cortex-M Family Microcontrollers", in Proc. IEEE WF-IoT, 2019.
+> X. Wang, M. Magno, L. Cavigelli, L. Benini, "FANN-on-MCU: An Open-Source Toolkit for Energy-Efficient Neural Network Inference at the Edge of the Internet of Things", arXiv:1911.03314 [cs.LG], Nov. 2019
 
 ### Prerequisites
 You should have data and a pre-trained network in the FANN format. 
 The generated codes uses optimized functions provided by CMSIS-DSP.
 To run the script, python needs to be installed. 
-This code has been tested with TI's MSP432 platform, ST's STM32L475VG, and PULP-based Mr. Wolf.
+This code has been tested with TI's MSP432 platform and ST's STM32L475VG.
 
 ### Usage
 First, you need to export your data in the FANN default format
@@ -51,7 +51,7 @@ with a fixed-point model or not. Don't forget to include the files
 in your build scripts/makefile/project.
 
 ### Demo Project
-The folder `stm32l475-onDeviceTest-linux` contains a demo project running test and benchmarking code on an STM32L475 discovery board. To regenerate the project, you need to open the `hello_world.ioc` project in STM32CubeMX (we used v5.1.0) and click _Generate Code_. Them using the ARM KEIL uVision 5 IDE (we used V5.26.2.0 MDK-ARM Professional), open `hello_world.uvprojx` in the MDK-ARM folder, and build and download the project to the board. Don't forget to run generate.py before building the project. Using the UART over the microUSB connection already there to power the board, you should then be able to see the number of correctly classified samples (9 of 10) and the number of cycles for each test sample. 
+The folder `stm32l475-onDeviceTest-linux` contains a demo project running test and benchmarking code on an STM32L475 discovery board.
 
 
 ## FANN-on-PULP: Optimized FANN Inference for PULP platforms
@@ -65,7 +65,6 @@ microcontroller are generated.
 
 ### Prerequisites
 You should have data and a pre-trained network in the FANN format. 
-The generated codes uses optimized functions provided in `PULP-DSP`.
 To run the script, python needs to be installed. 
 To use pulp platform, pulp sdk needs to be installed, you can find instructions [here](https://github.com/pulp-platform/pulp-sdk).
 This code has been tested with PULP [Mr.Wolf](http://asic.ethz.ch/2017/Mr.Wolf.html).
@@ -97,10 +96,8 @@ with a fixed-point model or not.
 
 ### Demo Project
 The folder `MrWolf-onBoardTest` contains a demo project running test and benchmarking code on an PULP Mr. Wolf board. To run the demo you need to install and configure the pulp sdk (instructions [here](https://github.com/pulp-platform/pulp-sdk)). Remember to source the `sourceme.sh` everytime you open a new terminal to use pulp sdk.
-After installing pulp sdk, run generate.py, copy the *.h and *.c files in the `MrWolf-onBoardTest` folder and do
+After installing pulp sdk, run generate.py, copy the generated *.h and *.c files to the `MrWolf-onBoardTest` folder and do
 > make clean all run
-
-You should then be able to see the number of correctly classified samples (9 of 10) and the number of cycles for each test sample printed in the terminal.
 
 ## Fixed-Point Remarks
 FANN allows to train your model and export it in fixed-point format easily. 
@@ -133,8 +130,9 @@ Constant files:
 - `fann_utils.h` and `fann_utils.c`: contain utility functions.
 - `test.c`: contains a test iterating over the exported test data. Serves as an example for 2-class classification. 
 - `mem_config.json`: contains memory configurations of the selected microcontroller.
+- `arm` and `pulp`: contain source code for respectively ARM Cortex-M series and PULP-based MCUs. `generate.py` will copy the corresponding source codes for the selected MCU to the `output` folder.
 
-Generated files:
+Generated files in `output` folder:
 
 - `fann_net.h`: contains the trained parameters and the network structure. 
 - `fann_conf.h`: contains some more meta information on the network; #layers, fixed-point parameters (if applicable), ...
