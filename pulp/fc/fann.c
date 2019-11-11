@@ -10,6 +10,80 @@
 #include "plp_math.h"
 
 
+// The PULP-DSP is not open-sourced yet, so I'm copying the dsp functions here before fann_run.
+void plp_copy_i32s_rv32im(
+                          int32_t * __restrict__ pSrc,
+                          int32_t * __restrict__ pDst,
+                          uint32_t blockSize){
+
+  uint32_t blkCnt, tmpBS;             /* Loop counter and temporal blockSize */
+
+#if defined (PLP_MATH_LOOPUNROLL)
+
+  tmpBS = (blockSize>>2);
+
+  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
+
+    /* Copy and store result in destination buffer */
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+  }
+
+  tmpBS = (blockSize%4U);
+
+  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
+    *pDst++ = *pSrc++;
+  }
+
+#else
+
+  for (blkCnt=0; blkCnt<blockSize; blkCnt++){
+    *pDst++ = *pSrc++;
+  }
+
+#endif // PLP_MATH_LOOPUNROLL
+
+
+}
+
+void plp_dot_prod_q32s_rv32im(
+                              const int32_t * __restrict__ pSrcA,
+                              const int32_t * __restrict__ pSrcB,
+                              uint32_t blockSize,
+                              uint32_t deciPoint,
+                              int32_t * __restrict__ pRes){
+        uint32_t blkCnt;                               /* Loop counter */
+        int32_t sum = 0;                          /* Temporary return variable */
+
+#if defined (PLP_MATH_LOOPUNROLL)
+
+        for (blkCnt=0; blkCnt<(blockSize>>2); blkCnt++){
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+        }
+
+        for (blkCnt=0; blkCnt<(blockSize%4U); blkCnt++){
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+        }
+
+#else // PLP_MATH_LOOPUNROLL
+
+        for (blkCnt=0; blkCnt<blockSize; blkCnt++){
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+        }
+
+#endif // PLP_MATH_LOOPUNROLL
+
+        * pRes = sum;
+
+}
+
+
+
 fann_type *fann_run(fann_type * input)
 {
   fann_type *neurons, neuron_sum, steepness;
@@ -29,7 +103,7 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-  plp_copy_i32(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
+  plp_copy_i32s_rv32im(input, &neuron_values[fann_layers[0].first_neuron], NUM_INPUT);
 
 #else
 
@@ -132,7 +206,7 @@ fann_type *fann_run(fann_type * input)
 
 #ifdef FIXEDFANN
 
-        plp_dot_prod_q32((fann_type *)weights, neurons, num_connections, DECIMAL_POINT, &neuron_sum);
+        plp_dot_prod_q32s_rv32im((fann_type *)weights, neurons, num_connections, DECIMAL_POINT, &neuron_sum);
 
 #else
         printf("floating point not supported yet for pulp\n");

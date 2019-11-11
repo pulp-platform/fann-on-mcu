@@ -16,6 +16,46 @@ RT_CL_DATA static int buff_index_weights = 0;
 RT_CL_DATA static int buff_index_neuron_values = 0;
 
 
+
+// The PULP-DSP is not open-sourced yet, so I'm copying the dsp functions here before fann_run.
+void plp_copy_i32s_xpulpv2(
+                           int32_t * __restrict__ pSrc,
+                           int32_t * __restrict__ pDst,
+                           uint32_t blockSize){
+
+  uint32_t blkCnt, tmpBS;                     /* Loop counter, temporal BlockSize */
+
+
+#if defined (PLP_MATH_LOOPUNROLL)
+
+  tmpBS = (blockSize>>1);
+
+  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
+
+    /* Copy and store result in destination buffer */
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+
+  }
+
+  tmpBS = (blockSize%2U);
+
+  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
+    *pDst++ = *pSrc++;
+  }
+
+#else
+
+  for (blkCnt=0; blkCnt<blockSize; blkCnt++){
+    *pDst++ = *pSrc++;
+  }
+
+#endif // PLP_MATH_LOOPUNROLL
+
+
+}
+
+
 fann_type *fann_run(fann_type * input)
 {
   //int cycle_count = 0, instr_count =0;

@@ -18,6 +18,45 @@
   // also parameters for each stepwise pieces, not worthy.
   */
 
+
+// The PULP-DSP is not open-sourced yet, so I'm copying the dsp functions here before fann_run.
+void plp_dot_prod_q32s_xpulpv2(
+                               const int32_t * __restrict__ pSrcA,
+                               const int32_t * __restrict__ pSrcB,
+                               uint32_t blockSize,
+                               uint32_t deciPoint,
+                               int32_t * __restrict__ pRes){
+  uint32_t blkCnt, tmpBS;                   /* Loop counter, temporal BlockSize */
+        int32_t sum = 0; //, sum1 =0;                          /* Temporary return variable */
+
+#if defined(PLP_MATH_LOOPUNROLL)
+
+        tmpBS = (blockSize>>1);
+
+        for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
+
+	sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+	sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+
+        }
+
+        for (blkCnt=0; blkCnt<(blockSize%2U); blkCnt++){
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+        }
+
+#else // PLP_MATH_LOOPUNROLL
+
+        for (blkCnt=0; blkCnt<blockSize; blkCnt++){
+          sum += (*pSrcA++) * (*pSrcB++) >> deciPoint;
+        }
+
+#endif // PLP_MATH_LOOPUNROLL
+
+        * pRes = sum; // + sum1;
+
+}
+
+
 void dot_prod_entry(void * S){
 
   //uint32_t nPE = ((plp_dot_prod_instance_q32 *)S)->nPE;
