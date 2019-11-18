@@ -1,5 +1,3 @@
-Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
-
 # FANN-on-MCU: Optimized FANN Inference for Microcontrollers
 
 This repository contains optimized code to perform inference of FANN-trained neural network on microcontrollers.
