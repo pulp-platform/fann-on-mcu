@@ -1,4 +1,3 @@
-IDIR=/home/xiaywang/pulp/PULP-DSP/include
 
 PULP_APP = test
 PULP_APP_FC_SRCS = test.c

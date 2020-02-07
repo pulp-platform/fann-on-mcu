@@ -1,32 +1,4 @@
-/*
-
-  FANN-on-MCU
-
-  Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
-
-  This library is free software; you can redistribute it and/or
-
-  modify it under the terms of the GNU Lesser General Public
-
-  License as published by the Free Software Foundation; either
-
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-
-  License along with this library; if not, write to the Free Software
-
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
-*/
+//Copyright (c) 2018 ETH Zurich, Xiaying Wang, Ferdinand von Hagen, Lukas Cavigelli, Michele Magno
 
 #include <stdio.h>
 #include "fann_conf.h"
@@ -42,45 +14,6 @@
 
 RT_CL_DATA static int buff_index_weights = 0;
 RT_CL_DATA static int buff_index_neuron_values = 0;
-
-
-// The PULP-DSP is not open-sourced yet, so I'm copying the dsp functions here before fann_run.
-void plp_copy_i32s_xpulpv2(
-                           int32_t * __restrict__ pSrc,
-                           int32_t * __restrict__ pDst,
-                           uint32_t blockSize){
-
-  uint32_t blkCnt, tmpBS;                     /* Loop counter, temporal BlockSize */
-
-
-#if defined (PLP_MATH_LOOPUNROLL)
-
-  tmpBS = (blockSize>>1);
-
-  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
-
-    /* Copy and store result in destination buffer */
-    *pDst++ = *pSrc++;
-    *pDst++ = *pSrc++;
-
-  }
-
-  tmpBS = (blockSize%2U);
-
-  for (blkCnt=0; blkCnt<tmpBS; blkCnt++){
-    *pDst++ = *pSrc++;
-  }
-
-#else
-
-  for (blkCnt=0; blkCnt<blockSize; blkCnt++){
-    *pDst++ = *pSrc++;
-  }
-
-#endif // PLP_MATH_LOOPUNROLL
-
-
-}
 
 
 fann_type *fann_run(fann_type * input)
@@ -117,8 +50,7 @@ fann_type *fann_run(fann_type * input)
 
 #else // FIXEDFANN
 
-  printf("float version not supported with pulp yet\n");
-  return 0;
+  plp_copy_f32s_xpulpv2(input, neuron_values[buff_index_neuron_values], NUM_INPUT);
 
 #endif // FIXEDFANN
 
@@ -252,8 +184,31 @@ fann_type *fann_run(fann_type * input)
 
 #else // FIXEDFANN
 
-        printf("floating point not supported yet for pulp\n");
-        return 0;
+        //nPE_tmp = last_neuron-neuron_it-1;
+        nPE_tmp = num_iter_neuron - neuron_it;
+
+        if (nPE_tmp > nPE){
+          // change the number of processing unit according to the number of neurons (clean up for remaining neurons)
+
+          nPE_tmp = nPE;
+
+        }
+
+        //weights = fann_weights + fann_neurons[neuron_it+1].first_connection;
+        weights_dma_transfer += num_connections * nPE_tmp; // Address of the weights for the next dot prod
+
+        // Wait for previous iteration input transfer. This is supposed to be already finished if processing is long enough
+        rt_dma_wait(&id_in_weights);
+
+        // Enqueue the input buffer transfer for the next iteration so that the DMA transfers it while we do computation
+        rt_dma_memcpy((int)weights_dma_transfer, (int)weights_loc_buff[buff_index_weights], num_weights*datasize, RT_DMA_DIR_EXT2LOC, 0, &id_in_weights);
+        buff_index_weights ^= 1;
+
+        weights = weights_loc_buff[buff_index_weights];
+
+        compute_per_layer_parallel_f32((fann_type *)weights, neuron_values[buff_index_neuron_values], num_connections, nPE_tmp, neuron_sum_buffer);
+
+        buff_index_neuron_values ^= 1;
 
 #endif // FIXEDFANN
 
@@ -322,7 +277,12 @@ fann_type *fann_run(fann_type * input)
       buff_index_neuron_values ^= 1;
 
 #else // FIXEDFANN
-      neuron_sum = fann_mult(steepness, neuron_sum);
+      for (neuron_it_tmp=0; neuron_it_tmp<nPE_tmp; neuron_it_tmp++) {
+
+        neuron_sum = neuron_sum_buffer[neuron_it_tmp];
+
+        //apply activation function
+          neuron_sum = fann_mult(steepness, neuron_sum);
       max_sum = 150.0f / steepness;
       if(neuron_sum > max_sum)
         neuron_sum = max_sum;
@@ -330,6 +290,10 @@ fann_type *fann_run(fann_type * input)
         neuron_sum = -max_sum;
 
       fann_activation_switch(activation_function, neuron_sum, neuron_values[neuron_it]);
+
+        neuron_values[neuron_it+neuron_it_tmp] = neuron_sum;
+
+      }
 #endif // FIXEDFANN
 
 #endif // ACTIVATIONS

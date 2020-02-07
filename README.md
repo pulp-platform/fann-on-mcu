@@ -35,12 +35,12 @@ In order to have optimized access to memory, the code generation script takes in
 
 Finally, you can use the `generate.py` script to generate the 
 files to run the inference on the microcontroller, for example on arm using fixed point:
-> python generate.py -i sample-data/myNetwork -m fixed -p arm
+> python generate.py -i sample-data/myNetwork -m fixed -p arm --mem_config mem_config.json
 
 For more details on how to use generate.py:
 > python generate.py -h
 
-Now all the *.h and *.c files can be copied to you project. 
+Now all the *.h and *.c files in the root folder (`fann.h` and `fann_struct.h`) and in the `output` folder can be copied to you project. 
 They include all the data and code to run the network. 
 To call it from your code, just include `fann.h` and call 
 `fann_type *fann_run(fann_type * input);`, where
@@ -65,6 +65,7 @@ microcontroller are generated.
 You should have data and a pre-trained network in the FANN format. 
 To run the script, python needs to be installed. 
 To use pulp platform, pulp sdk needs to be installed, you can find instructions [here](https://github.com/pulp-platform/pulp-sdk).
+The generated codes uses optimized functions provided by PULP-DSP. Please follow the instructions on [PULP-DSP](https://github.com/pulp-platform/pulp-dsp) to install the library.
 This code has been tested with PULP [Mr.Wolf](http://asic.ethz.ch/2017/Mr.Wolf.html).
 
 ### Usage
@@ -79,12 +80,12 @@ In order to have optimized access to memory, the code generation script takes in
 
 Finally, you can use the `generate.py` script to generate the 
 files to run on the microcontroller, for example on pulp using fixed point (currently only fixed point is supported on pulp):
-> python generate.py -i sample-data/myNetwork -m fixed -p pulp
+> python generate.py -i sample-data/myNetwork -m fixed -p pulp --mem_config mem_config.json
 
 For more details on how to use generate.py:
 > python generate.py -h
 
-Now all the *.h and *.c files can be copied to you project. 
+Now all the *.h and *.c files in the root folder (`fann.h` and `fann_struct.h`) and in the `output` folder can be copied to you project. 
 They include all the data and code to run the network. 
 To call it from your code, just include `fann.h` and call 
 `fann_type *fann_run(fann_type * input);`, where
@@ -135,6 +136,7 @@ Generated files in `output` folder:
 - `fann_net.h`: contains the trained parameters and the network structure. 
 - `fann_conf.h`: contains some more meta information on the network; #layers, fixed-point parameters (if applicable), ...
 - `test_data.h`: contains the test input data and expected result
+- `fann.c` and/or `fann_utils.c` and `fann_utils.h`: the corresponding source codes for the selected MCU to the `output` folder.
 
 
 ## License and Attribution

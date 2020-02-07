@@ -76,8 +76,8 @@ def get_args():
     dict['platform'] = args.platform
 
     if args.platform == 'pulp':
-        if args.dtype == 'float':
-            parser.error("currently no float support with pulp")
+        #if args.dtype == 'float':
+        #    parser.error("currently no float support with pulp")
         if args.comp == None:
             if args.domain == 'fc':
                 args.comp = 'single'
